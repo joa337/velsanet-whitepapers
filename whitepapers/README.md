@@ -39,3 +39,13 @@ WP16 Velsanet Path Formation White Paper
 WP17 Velsanet Path Lifecycle White Paper
 
 WP18 Velsanet Network AI and Global Governance Architecture White Paper
+
+## Structural Research Materials
+
+In addition to the fixed white paper series (WPxx), this repository also contains a `research/` directory.
+
+Materials under `research/` document ongoing structural exploration, draft papers, and reference artifacts
+that are consistent with the architectural conditions defined by the white papers.
+
+These research materials are not proposals or standards.
+They serve as an open record of structural reasoning, evolution, and validation.
