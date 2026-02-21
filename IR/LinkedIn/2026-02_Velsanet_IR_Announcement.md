@@ -28,3 +28,8 @@ Velsanet does not optimize the Internet.
 It proposes a structural substrate replacement.
 
 This archive preserves the public timestamp of that positioning.
+
+## Deck Versions
+
+- English Version: IR/InvestorDeck/2026_Velsanet_IR_Deck.pptx
+- Korean Version: IR/LinkedIn/Velsanet_IR_Pitch_Deck(KR).pptx
