@@ -1,21 +1,26 @@
-# velsanet-whitepapers
-Structural white papers defining the architectural foundations of Velsanet. This repository contains no executable code.
-## Purpose of This Repository
+velsanet-whitepapers
 
-This repository is not a product, a proposal, or a collection of features.
+Structural white papers defining the architectural foundations of Velsanet.
 
-It defines the structural conditions under which Velsanet exists.
-The documents here do not explain what to build.
-They fix what must be structurally true before implementation, optimization, or interpretation.
+This repository contains architectural documents only.
+No executable code is included.
 
-No executable code is provided by design.
+Purpose of This Repository
 
-## How to Read These White Papers
+This repository documents the structural foundations of Velsanet.
 
-These white papers are not meant to be read sequentially as tutorials.
+It does not present a product, a feature roadmap, or an implementation guide.
+Instead, it defines the architectural constraints and system conditions that must hold before any implementation, optimization, or deployment.
 
-Each document fixes a specific structural boundary.
-Together, they form a single architectural system.
+The focus is structural coherence rather than functional description.
 
-If you read them as feature descriptions, they will not connect.
-If you read them as structural constraints, the system will emerge naturally.
+How to Read These White Papers
+
+These documents are not tutorials.
+
+Each white paper establishes a specific architectural boundary — spatial, mathematical, physical, cognitive, or governance-related.
+
+Individually, they define constraints.
+Collectively, they form a unified topology-first, AI-native network architecture.
+
+They should be read as structural definitions rather than feature explanations.
