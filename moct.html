@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MOCT — Velsanet Parallel E2E</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#010306;--surface:#040810;--border:#08121C;--dim:#060C14;
+  --text:#B8D8F0;--muted:#1C3048;
+  --core:#00E5FF;--packet:#FF4444;--accent:#FFD740;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Chakra Petch',sans-serif;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.015) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(1,3,6,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:14px 48px;display:flex;justify-content:space-between;align-items:center;}
+.nav-brand{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;letter-spacing:4px;color:var(--text);text-decoration:none;}
+.nav-brand span{color:var(--core);}
+.nav-back{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.nav-back:hover{color:var(--core);}
+
+.hero{position:relative;z-index:1;padding:130px 60px 60px;max-width:1200px;margin:0 auto;}
+.hero-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:5px;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+.hero-eyebrow::before{content:'';width:32px;height:1px;background:var(--muted);}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(44px,8vw,96px);font-weight:800;line-height:.9;letter-spacing:1px;margin-bottom:24px;text-transform:uppercase;}
+.hero-title .acc{color:var(--core);}
+.hero-title .dim{color:var(--muted);}
+.hero-sub{font-size:14px;color:var(--muted);max-width:620px;line-height:1.85;border-left:2px solid var(--border);padding-left:18px;}
+.hero-sub strong{color:rgba(0,229,255,.45);font-weight:400;}
+
+/* BIG CLAIM BANNER */
+.claim{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 48px;}
+.claim-box{border:1px solid var(--border);border-radius:12px;padding:28px 36px;display:flex;align-items:center;gap:28px;position:relative;overflow:hidden;background:var(--surface);}
+.claim-box::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(to bottom,var(--core),transparent);}
+.claim-text{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;line-height:1.4;}
+.claim-text .r{color:var(--packet);}
+.claim-text .g{color:var(--core);}
+.claim-src{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:6px;}
+
+/* COMPARISON SECTION */
+.compare-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 60px;}
+.sec-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:5px;color:var(--muted);margin-bottom:28px;display:flex;align-items:center;gap:14px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.compare-split{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.compare-col{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.col-header{padding:20px 24px;border-bottom:1px solid var(--border);}
+.col-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;letter-spacing:2px;}
+.col-sub{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:4px;}
+
+/* Packet switching animation */
+.col-vis{height:160px;padding:20px 24px;position:relative;overflow:hidden;background:var(--dim);}
+.ps-nodes{display:flex;justify-content:space-between;align-items:center;height:100%;}
+.ps-node{width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1px;border:1px solid var(--packet);color:var(--packet);}
+.ps-path{flex:1;height:2px;background:var(--packet);opacity:.3;position:relative;overflow:hidden;}
+.ps-packet{position:absolute;width:10px;height:10px;background:var(--packet);border-radius:2px;top:-4px;animation:movePacket 2s linear infinite;}
+@keyframes movePacket{0%{left:-10px}100%{left:110%}}
+.ps-queue{position:absolute;top:4px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:7px;color:var(--packet);white-space:nowrap;opacity:.7;}
+
+/* MOCT parallel cores animation */
+.moct-cores{display:flex;flex-direction:column;justify-content:center;gap:5px;height:100%;padding:0 8px;}
+.moct-core{height:8px;border-radius:2px;background:var(--muted);position:relative;overflow:hidden;}
+.moct-core.active{background:rgba(0,229,255,.15);}
+.moct-core.active::after{content:'';position:absolute;top:0;bottom:0;left:-100%;width:100%;background:linear-gradient(90deg,transparent,var(--core),transparent);animation:coreFlow var(--delay,1.5s) linear infinite;}
+@keyframes coreFlow{0%{left:-100%}100%{left:200%}}
+.moct-label{font-family:'Space Mono',monospace;font-size:7px;color:var(--muted);position:absolute;right:8px;top:50%;transform:translateY(-50%);opacity:.5;}
+
+.col-props{padding:20px 24px;display:flex;flex-direction:column;gap:10px;}
+.col-prop{display:flex;gap:12px;font-size:12px;color:var(--muted);line-height:1.6;}
+.cp-key{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:2px;min-width:100px;flex-shrink:0;padding-top:2px;}
+.bad{color:var(--packet);}
+.good{color:var(--core);}
+
+/* CORE ARCHITECTURE */
+.arch-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 60px;}
+.arch-flow{display:flex;align-items:stretch;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.af-node{flex:1;padding:24px 18px;text-align:center;border-right:1px solid var(--border);position:relative;}
+.af-node:last-child{border-right:none;}
+.af-arrow{position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--core);z-index:2;}
+.af-icon{font-size:24px;margin-bottom:10px;}
+.af-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;letter-spacing:2px;color:var(--core);margin-bottom:6px;}
+.af-desc{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--muted);line-height:1.6;}
+
+/* 8 CHANNELS */
+.channels-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 60px;}
+.channels-vis{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px;display:flex;align-items:center;gap:32px;}
+.cv-core{display:flex;flex-direction:column;gap:6px;flex:1;}
+.cv-ch{display:flex;align-items:center;gap:12px;padding:8px 14px;border-radius:6px;border:1px solid var(--border);}
+.cv-ch.ch1{border-color:var(--accent);background:rgba(255,215,64,.05);}
+.cv-ch.chdata{border-color:rgba(0,229,255,.2);}
+.cv-num{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);width:20px;flex-shrink:0;}
+.cv-bar{height:6px;border-radius:3px;flex:1;}
+.cv-label{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1px;white-space:nowrap;width:180px;}
+.cv-note{max-width:220px;font-size:12px;color:var(--muted);line-height:1.8;}
+.cv-note strong{color:var(--core);font-weight:400;}
+
+/* DENSITY ROADMAP */
+.roadmap-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 60px;}
+.roadmap-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.rm-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative;overflow:hidden;}
+.rm-phase{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:8px;}
+.rm-count{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:var(--core);line-height:1;}
+.rm-unit{font-size:13px;color:var(--muted);}
+.rm-bar-vis{margin:16px 0;height:8px;background:var(--muted);border-radius:4px;overflow:hidden;}
+.rm-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--core),rgba(0,229,255,.4));}
+.rm-features{display:flex;flex-direction:column;gap:6px;}
+.rm-feat{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
+.rm-feat::before{content:'→';color:var(--core);font-size:11px;}
+
+/* COMPARE TABLE */
+.table-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 80px;}
+.compare-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.compare-table th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);padding:14px 18px;text-align:left;border-bottom:1px solid var(--border);background:var(--dim);}
+.compare-table td{font-size:12px;padding:13px 18px;border-bottom:1px solid var(--border);color:var(--muted);vertical-align:middle;}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-table tr:hover td{background:var(--dim);}
+.td-feature{color:var(--text);font-weight:500;}
+.td-bad{color:var(--packet);font-family:'Space Mono',monospace;font-size:10px;}
+.td-good{color:var(--core);font-family:'Space Mono',monospace;font-size:10px;}
+
+.page-footer{position:relative;z-index:1;border-top:1px solid var(--border);max-width:1200px;margin:0 auto;padding:32px 60px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
+.footer-left{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);}
+.footer-links{display:flex;gap:20px;}
+.footer-link{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.footer-link:hover{color:var(--core);}
+
+@media(max-width:768px){
+  .hero,.claim,.compare-section,.arch-section,.channels-section,.roadmap-section,.table-section{padding-left:24px;padding-right:24px;}
+  .compare-split,.roadmap-bars{grid-template-columns:1fr;}
+  .arch-flow{flex-direction:column;}
+  .af-arrow{display:none;}
+  .channels-vis{flex-direction:column;}
+  .page-footer{padding:24px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">VELSA<span>NET</span></a>
+  <a href="index.html" class="nav-back">← BACK TO HOME</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">WHITE PAPER #03 · #04 · MOCT · PARALLEL E2E</div>
+  <h1 class="hero-title">
+    <span class="acc">MOCT</span><br/>
+    <span style="font-size:.55em;letter-spacing:3px;color:var(--text)">MULTI-OPTICAL-CORE</span><br/>
+    <span style="font-size:.55em;letter-spacing:3px;color:var(--text)">TRANSCEIVER</span>
+  </h1>
+  <p class="hero-sub">
+    Velsanet <strong>abandons packet switching entirely</strong>.<br/>
+    No routing tables. No forwarding logic. No switching ASICs.<br/><br/>
+    Instead: deterministic, parallel end-to-end optical paths formed through a fixed, non-pluggable photonic substrate. Each connection occupies a physically isolated optical core. Hundreds run simultaneously.
+  </p>
+</section>
+
+<!-- CLAIM BANNER -->
+<section class="claim">
+  <div class="claim-box">
+    <div>
+      <div class="claim-text">
+        The Internet routes <span class="r">packets through shared switches</span>.<br/>
+        Velsanet forms <span class="g">dedicated optical paths through parallel cores</span>.
+      </div>
+      <div class="claim-src">VELSANET WP#03 · MOCT ARCHITECTURE · CORE PRINCIPLE</div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="compare-section">
+  <div class="sec-label">PACKET SWITCHING vs PARALLEL OPTICAL E2E</div>
+  <div class="compare-split">
+
+    <div class="compare-col" style="border-top:2px solid var(--packet)">
+      <div class="col-header">
+        <div class="col-title" style="color:var(--packet)">PACKET SWITCHING</div>
+        <div class="col-sub">TODAY'S INTERNET · TCP/IP · SDN/NFV</div>
+      </div>
+      <div class="col-vis">
+        <div class="ps-nodes">
+          <div class="ps-node">SRC</div>
+          <div class="ps-path">
+            <div class="ps-packet" style="animation-delay:0s;background:var(--packet)"></div>
+            <div class="ps-packet" style="animation-delay:.7s;background:var(--packet);opacity:.6"></div>
+            <div class="ps-queue">SWITCH ← QUEUE</div>
+          </div>
+          <div class="ps-node">SW</div>
+          <div class="ps-path">
+            <div class="ps-packet" style="animation-delay:.4s;background:var(--packet)"></div>
+          </div>
+          <div class="ps-node">DST</div>
+        </div>
+      </div>
+      <div class="col-props">
+        <div class="col-prop"><div class="cp-key bad">PATH</div><div>Logical · shared medium · re-routed per packet</div></div>
+        <div class="col-prop"><div class="cp-key bad">LATENCY</div><div>Variable · queuing delays · unpredictable under load</div></div>
+        <div class="col-prop"><div class="cp-key bad">PARALLELISM</div><div>Logical only · sequential bottleneck at switches</div></div>
+        <div class="col-prop"><div class="cp-key bad">SECURITY</div><div>Endpoint authentication · physical path unverifiable</div></div>
+        <div class="col-prop"><div class="cp-key bad">AI NATIVE</div><div>AI bolted on top — external to network layer</div></div>
+      </div>
+    </div>
+
+    <div class="compare-col" style="border-top:2px solid var(--core)">
+      <div class="col-header">
+        <div class="col-title" style="color:var(--core)">VELSANET MOCT</div>
+        <div class="col-sub">PARALLEL OPTICAL E2E · PHYSICAL DETERMINISM</div>
+      </div>
+      <div class="col-vis" style="position:relative">
+        <div class="moct-cores" id="moctCores">
+          <!-- filled by JS -->
+        </div>
+      </div>
+      <div class="col-props">
+        <div class="col-prop"><div class="cp-key good">PATH</div><div>Physical · dedicated optical core · 1 connection = 1 core</div></div>
+        <div class="col-prop"><div class="cp-key good">LATENCY</div><div>Deterministic · zero queuing · fixed optical propagation</div></div>
+        <div class="col-prop"><div class="cp-key good">PARALLELISM</div><div>True physical · 100–1,000+ simultaneous cores</div></div>
+        <div class="col-prop"><div class="cp-key good">SECURITY</div><div>Physical-layer authentication via Ch1 · path verifiable</div></div>
+        <div class="col-prop"><div class="cp-key good">AI NATIVE</div><div>AI operates as native participant in topological space</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE FLOW -->
+<section class="arch-section">
+  <div class="sec-label">MOCT SIGNAL FLOW</div>
+  <div class="arch-flow">
+    <div class="af-node">
+      <div class="af-icon" style="color:var(--core)">🧠</div>
+      <div class="af-name">NETWORK AI</div>
+      <div class="af-desc">Topology intent<br/>Path formation<br/>request</div>
+      <div class="af-arrow">→</div>
+    </div>
+    <div class="af-node">
+      <div class="af-icon" style="color:var(--core)">⊞</div>
+      <div class="af-name">TOPOLOGY PLANE</div>
+      <div class="af-desc">Polyhedral<br/>structure validation<br/>Core selection</div>
+      <div class="af-arrow">→</div>
+    </div>
+    <div class="af-node">
+      <div class="af-icon" style="color:var(--core)">▦</div>
+      <div class="af-name">MATRIX</div>
+      <div class="af-desc">Multi-plane<br/>multi-layer<br/>optical switching</div>
+      <div class="af-arrow">→</div>
+    </div>
+    <div class="af-node">
+      <div class="af-icon" style="color:var(--core)">◉</div>
+      <div class="af-name">MOCT</div>
+      <div class="af-desc">Fixed non-pluggable<br/>parallel transceiver<br/>MEMS aligned</div>
+      <div class="af-arrow">→</div>
+    </div>
+    <div class="af-node">
+      <div class="af-icon" style="color:var(--core)">≡</div>
+      <div class="af-name">FIBER (5M+)</div>
+      <div class="af-desc">Pre-attached<br/>factory-fused<br/>zero connectors</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 CHANNELS PER CORE -->
+<section class="channels-section">
+  <div class="sec-label">8 FIXED CHANNELS PER OPTICAL CORE</div>
+  <div class="channels-vis">
+    <div class="cv-core">
+      <div class="cv-ch ch1">
+        <div class="cv-num" style="color:var(--accent)">CH1</div>
+        <div class="cv-bar" style="background:var(--accent);width:100%"></div>
+        <div class="cv-label" style="color:var(--accent)">SENSING · CONTROL · AUTH</div>
+      </div>
+      <div class="cv-ch chdata">
+        <div class="cv-num" style="color:var(--core)">CH2</div>
+        <div class="cv-bar" style="background:linear-gradient(90deg,var(--core),rgba(0,229,255,.3));width:100%"></div>
+        <div class="cv-label" style="color:var(--muted)">DATA TRANSMISSION</div>
+      </div>
+      <div class="cv-ch chdata">
+        <div class="cv-num" style="color:var(--core)">CH3</div>
+        <div class="cv-bar" style="background:linear-gradient(90deg,var(--core),rgba(0,229,255,.3));width:85%"></div>
+        <div class="cv-label" style="color:var(--muted)">DATA TRANSMISSION</div>
+      </div>
+      <div class="cv-ch chdata">
+        <div class="cv-num" style="color:var(--core)">CH4</div>
+        <div class="cv-bar" style="background:linear-gradient(90deg,var(--core),rgba(0,229,255,.3));width:90%"></div>
+        <div class="cv-label" style="color:var(--muted)">DATA TRANSMISSION</div>
+      </div>
+      <div class="cv-ch chdata">
+        <div class="cv-num" style="color:var(--core)">CH5</div>
+        <div class="cv-bar" style="background:linear-gradient(90deg,var(--core),rgba(0,229,255,.3));width:75%"></div>
+        <div class="cv-label" style="color:var(--muted)">DATA TRANSMISSION</div>
+      </div>
+      <div class="cv-ch chdata">
+        <div class="cv-num" style="color:var(--core)">CH6</div>
+        <div class="cv-bar" style="background:linear-gradient(90deg,var(--core),rgba(0,229,255,.3));width:95%"></div>
+        <div class="cv-label" style="color:var(--muted)">DATA TRANSMISSION</div>
+      </div>
+      <div class="cv-ch chdata">
+        <div class="cv-num" style="color:var(--core)">CH7</div>
+        <div class="cv-bar" style="background:linear-gradient(90deg,var(--core),rgba(0,229,255,.3));width:88%"></div>
+        <div class="cv-label" style="color:var(--muted)">DATA TRANSMISSION</div>
+      </div>
+      <div class="cv-ch chdata">
+        <div class="cv-num" style="color:var(--core)">CH8</div>
+        <div class="cv-bar" style="background:linear-gradient(90deg,var(--core),rgba(0,229,255,.3));width:72%"></div>
+        <div class="cv-label" style="color:var(--muted)">DATA TRANSMISSION</div>
+      </div>
+    </div>
+    <div class="cv-note">
+      Every optical core has <strong>8 fixed, non-switchable channels</strong>.<br/><br/>
+      <strong>Channel 1</strong> is permanently reserved for sensing, control, device authentication, and physical alignment verification.<br/><br/>
+      <strong>Channels 2–8</strong> carry parallel optical data. All channels are fixed — no software can reassign them.<br/><br/>
+      This makes optical paths <strong>deterministic, passive, and immune to logical interference</strong>.<br/><br/>
+      Physical-layer authentication is native — not an add-on. The path verifies itself.
+    </div>
+  </div>
+</section>
+
+<!-- DENSITY ROADMAP -->
+<section class="roadmap-section">
+  <div class="sec-label">OPTICAL CORE DENSITY ROADMAP</div>
+  <div class="roadmap-bars">
+    <div class="rm-bar" style="border-top:2px solid rgba(0,229,255,.4)">
+      <div class="rm-phase">PHASE 1 · 2026</div>
+      <div class="rm-count">100 <span class="rm-unit">cores</span></div>
+      <div class="rm-bar-vis"><div class="rm-bar-fill" style="width:10%"></div></div>
+      <div class="rm-features">
+        <div class="rm-feat">MOCT prototype hardware</div>
+        <div class="rm-feat">PAI + AAI integration lab</div>
+        <div class="rm-feat">City-scale pilot network</div>
+      </div>
+    </div>
+    <div class="rm-bar" style="border-top:2px solid rgba(0,229,255,.65)">
+      <div class="rm-phase">PHASE 2 · 2027</div>
+      <div class="rm-count">200–500 <span class="rm-unit">cores</span></div>
+      <div class="rm-bar-vis"><div class="rm-bar-fill" style="width:40%"></div></div>
+      <div class="rm-features">
+        <div class="rm-feat">First city E2E management center</div>
+        <div class="rm-feat">3-layer AI live deployment</div>
+        <div class="rm-feat">Identity provisioning pipeline</div>
+      </div>
+    </div>
+    <div class="rm-bar" style="border-top:2px solid var(--core)">
+      <div class="rm-phase">PHASE 3 · 2028+</div>
+      <div class="rm-count">1,000+ <span class="rm-unit">cores</span></div>
+      <div class="rm-bar-vis"><div class="rm-bar-fill" style="width:100%"></div></div>
+      <div class="rm-features">
+        <div class="rm-feat">Multi-city Velsanet mesh</div>
+        <div class="rm-feat">National sovereign Q4 layer</div>
+        <div class="rm-feat">Hyper-dimensional E2E topology</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FULL COMPARISON TABLE -->
+<section class="table-section">
+  <div class="sec-label">MOCT vs CONVENTIONAL OPTICAL SYSTEMS</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>FEATURE</th>
+        <th>QSFP / SFP (CONVENTIONAL)</th>
+        <th>VELSANET MOCT</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="td-feature">Module Type</td><td class="td-bad">Pluggable · replaceable</td><td class="td-good">Fixed · non-pluggable · permanent</td></tr>
+      <tr><td class="td-feature">Fiber Connection</td><td class="td-bad">External connector · loss point</td><td class="td-good">Pre-attached · factory-fused · zero connectors</td></tr>
+      <tr><td class="td-feature">Optical Core Count</td><td class="td-bad">4 – 8 cores</td><td class="td-good">100 – 1,000+ cores</td></tr>
+      <tr><td class="td-feature">Connector Loss</td><td class="td-bad">Yes · accumulates over time</td><td class="td-good">None · zero connector interfaces</td></tr>
+      <tr><td class="td-feature">Long-term Stability</td><td class="td-bad">Degradation through connector wear</td><td class="td-good">MEMS-aligned · semiconductor-grade stability</td></tr>
+      <tr><td class="td-feature">AI Physical Control</td><td class="td-bad">Impossible · AI is external</td><td class="td-good">Native · AI operates inside topology</td></tr>
+      <tr><td class="td-feature">Physical Authentication</td><td class="td-bad">No physical-layer path verification</td><td class="td-good">Ch1 authentication · every core verifies itself</td></tr>
+      <tr><td class="td-feature">Topology Reconfiguration</td><td class="td-bad">Software-only · no physical basis</td><td class="td-good">Network AI reconfigures physical topology</td></tr>
+      <tr><td class="td-feature">Parallelism</td><td class="td-bad">Limited · logical only</td><td class="td-good">Massive · true physical parallel E2E</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer class="page-footer">
+  <div class="footer-left">VELSANET · WHITE PAPER #03 · #04 · MOCT PARALLEL E2E</div>
+  <div class="footer-links">
+    <a href="index.html" class="footer-link">HOME</a>
+    <a href="polyhedra.html" class="footer-link">POLYHEDRA</a>
+    <a href="dikwei.html" class="footer-link">DIKWEI</a>
+    <a href="whitepapers/WP03_Multi_Optical_Core_Transceiver/Velsanet%20Multi-Optical-Core%20Transceiver%20(MOCT)%20White%20Paper%20%2303(v1.1_20251207).pdf" class="footer-link" target="_blank">↓ WP03 PDF</a>
+  </div>
+</footer>
+
+<script>
+// MOCT core animation
+const coresEl = document.getElementById('moctCores');
+const activeIndices = [0,1,2,4,5,7,8,10,11,12,14];
+for(let i=0;i<16;i++){
+  const core = document.createElement('div');
+  core.className = 'moct-core' + (activeIndices.includes(i)?' active':'');
+  if(activeIndices.includes(i)){
+    core.style.setProperty('--delay', (0.3 + (i*0.13)) + 's');
+    core.style.width = (50 + Math.random()*50) + '%';
+  } else {
+    core.style.width = '30%';
+  }
+  coresEl.appendChild(core);
+}
+</script>
+</body>
+</html>
