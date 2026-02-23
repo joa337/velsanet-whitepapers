@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PAI — 개인 전생애 주기 데이터 아키텍처</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#04080F; font-family:'DM Mono','Courier New',monospace; color:#D0E8FF; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
+@keyframes glow { 0%,100%{box-shadow:0 0 12px #00E5FF33}50%{box-shadow:0 0 28px #00E5FF77} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)} }
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#04080F}
+::-webkit-scrollbar-thumb{background:#1A2A3A;border-radius:3px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+/* ── 전생애 주기 단계 ── */
+const LIFECYCLE = [
+  {
+    id: "birth", age: "출생 ~ 3세", label: "탄생·감각 형성기",
+    icon: "🌱", color: "#00E5FF",
+    tciem: {
+      T: "출생 시각·병원·분만 환경·신체 계측",
+      C: "가족 구성·주거 환경·모국어·문화권",
+      I: "수유·수면·울음 — 원초적 생존 의도",
+      E: "공포·기쁨·애착 — 기초 감정 레이어 형성",
+      M: "— (AAI 기입 시작: 발달 지표 모니터링)"
+    },
+    insight: "T-Axis의 불변 기준점이 여기서 시작됩니다. 출생은 PAI Cube의 '시간 0'이며, 이후 모든 데이터의 인과 기준이 됩니다.",
+    cubeState: "초기화 — T축 고정, C/I/E 원시 기록 시작"
+  },
+  {
+    id: "childhood", age: "4 ~ 12세", label: "아동·학습 형성기",
+    icon: "🧩", color: "#76FF03",
+    tciem: {
+      T: "학교 입학·사건 순서·학습 이정표",
+      C: "교실·놀이터·가정·사회 초기 맥락",
+      I: "호기심·질문·놀이·또래 관계 의도",
+      E: "성취감·좌절·우정·수치심 형성",
+      M: "학습 패턴·반복 오류·교정 태그 (AAI 기입)"
+    },
+    insight: "I-Axis에 '호기심'이라는 의도 유형이 처음 대규모로 기록됩니다. 이 시기의 반복 패턴이 M-Axis 초기 구조를 형성합니다.",
+    cubeState: "학습 의도 폭발 — I/E축 급격 성장, M축 패턴 형성 시작"
+  },
+  {
+    id: "adolescence", age: "13 ~ 18세", label: "청소년·정체성 탐색기",
+    icon: "🔥", color: "#FF6D00",
+    tciem: {
+      T: "사춘기·첫 경험들·가치관 충돌 시점",
+      C: "또래집단·SNS·학교·가족 갈등 맥락",
+      I: "자아 탐색·반항·소속·이상 추구 의도",
+      E: "강렬한 감정 진폭·사랑·분노·수치",
+      M: "정체성 패턴·위험 행동 태그·AsAI 개입 기록"
+    },
+    insight: "E-Axis 기록 밀도가 전생애 최고점에 근접합니다. 이 감정 데이터는 이후 M-Axis의 '의사결정 보정 기준'으로 활용됩니다.",
+    cubeState: "감정 데이터 최고 밀도 — M축 AsAI 개입 기록 급증"
+  },
+  {
+    id: "young_adult", age: "19 ~ 35세", label: "청년·역할 정립기",
+    icon: "⚡", color: "#E040FB",
+    tciem: {
+      T: "진학·취업·결혼·독립 등 전환점",
+      C: "직장·도시·관계망·경제적 맥락",
+      I: "성취·경쟁·창조·관계 형성 의도",
+      E: "열정·번아웃·사랑·야망의 교차",
+      M: "직업 적합성 패턴·의사결정 강화 이력"
+    },
+    insight: "T-Axis의 '전환점' 밀도가 가장 높습니다. 각 결정 사건이 M-Axis에 강화/패널티 이력으로 기록되어 이후 의도 형성의 기준이 됩니다.",
+    cubeState: "의도 복잡도 최대 — 다중 역할 C축, 강화 M축 적층"
+  },
+  {
+    id: "middle", age: "36 ~ 55세", label: "중년·성숙·통합기",
+    icon: "🌊", color: "#FFD740",
+    tciem: {
+      T: "자녀 성장·부모 노화·경력 전환점",
+      C: "가족 시스템·사회적 지위·지역사회",
+      I: "의미 추구·돌봄·유산·영향력 의도",
+      E: "수용·후회·지혜·상실의 통합",
+      M: "AsAI: 생애 패턴 종합·장기 정책 업데이트"
+    },
+    insight: "M-Axis가 가장 두텁게 쌓입니다. 수십 년의 강화/패널티 이력이 AsAI의 지혜 판단 기준으로 작동하며, PAI가 가장 성숙한 상태에 도달합니다.",
+    cubeState: "M축 최대 두께 — PAI 성숙도 정점, AsAI 지혜 판단 최활성"
+  },
+  {
+    id: "senior", age: "56 ~ 75세", label: "노년·지혜·전수기",
+    icon: "🌙", color: "#4FC3F7",
+    tciem: {
+      T: "은퇴·건강 변화·사별 등 상실 시점",
+      C: "축소된 이동 반경·의료·커뮤니티",
+      I: "전수·회고·마무리·연결 의도",
+      E: "평온·그리움·감사·죽음 수용",
+      M: "건강 패턴 예측·위험 보정 태그·케어 정책"
+    },
+    insight: "C-Axis의 공간이 축소되는 반면, I-Axis의 '전수 의도'가 새로운 유형으로 출현합니다. 이 시기 PAI는 개인의 지식 유산 아카이브로 기능합니다.",
+    cubeState: "공간 C축 수렴, 전수 I축 신규 활성 — 건강 M축 예측 강화"
+  },
+  {
+    id: "late", age: "76세~", label: "말년·통합·완결기",
+    icon: "✦", color: "#FF8A65",
+    tciem: {
+      T: "최종 이정표들 — 불변 레코드로 봉인",
+      C: "최소화된 환경·가족·의료 시스템",
+      I: "존엄·연결·마무리 의도",
+      E: "심층 수용·사랑·평화",
+      M: "생애 전체 패턴 최종 통합 — AsAI 아카이브"
+    },
+    insight: "T-Axis는 불변이므로 이 순간까지의 전체 생애가 완전히 보존됩니다. PAI는 개인의 '디지털 생애 전체'를 담은 살아있는 아카이브가 됩니다.",
+    cubeState: "전생애 T축 완결 — M축 생애 통합 아카이브 봉인"
+  }
+];
+
+/* ── 전생애가 가능한 이유 ── */
+const REASONS = [
+  { icon:"⧖", title:"T-Axis 불변성", color:"#00E5FF",
+    body:"출생부터 사망까지 모든 사건이 타임스탬프와 함께 불변(Immutable)으로 기록됩니다. 과거는 절대 수정되지 않으므로 70년, 100년 후에도 어린 시절 감정을 정확히 재현할 수 있습니다." },
+  { icon:"⊛", title:"I-Axis — 의도의 연속성", color:"#FF6D00",
+    body:"호기심(아동) → 자아 탐색(청소년) → 성취(청년) → 의미(중년) → 전수(노년)로 의도 유형이 생애를 따라 진화합니다. 이 진화 궤적 자체가 한 사람의 '인생 의도 서사'가 됩니다." },
+  { icon:"⬡", title:"M-Axis — 누적 지혜", color:"#FFD740",
+    body:"AAI와 AsAI가 수십 년 동안 M-Axis에 강화/패널티 이력을 기입합니다. 이 누적이 PAI를 점점 더 성숙한 '개인 지능'으로 만드는 유기적 성장의 본체입니다." },
+  { icon:"◉", title:"E-Axis — 감정 생애사", color:"#E040FB",
+    body:"청소년기의 강렬한 감정 진폭부터 노년의 깊은 수용까지, 감정 데이터가 기억 중요도 순위를 결정합니다. 평생의 감정 지형도가 PAI 안에 살아있게 됩니다." },
+  { icon:"◈", title:"Identity — 제조 시점 고정", color:"#76FF03",
+    body:"벨사넷 Identity White Paper에 따르면 디바이스 정체성은 제조 시점에 확정됩니다. PAI 정체성이 출생과 함께 발행되면, 이 구조적 정체성이 전생애 데이터를 단일 주체 아래 묶어주는 앵커가 됩니다." },
+];
+
+/* ── 현재 AI와의 차이 ── */
+const DIFF = [
+  { label:"기억 지속성", current:"세션 종료 시 초기화", pai:"T-Axis: 전생애 불변 보존" },
+  { label:"맥락 깊이", current:"대화 창 내 맥락만", pai:"수십 년 C-Axis 누적 맥락" },
+  { label:"의도 이해", current:"프롬프트로 매번 주입", pai:"I-Axis: 생애 의도 궤적 내장" },
+  { label:"감정 인식", current:"텍스트 감정 분석 수준", pai:"E-Axis: 평생 감정 생애사" },
+  { label:"성숙도 성장", current:"모델 재훈련 필요", pai:"M-Axis: 개인 단위 유기적 성장" },
+  { label:"정체성", current:"익명·세션 기반", pai:"제조 시 발행된 구조적 고유 정체성" },
+];
+
+function App() {
+  const [selected, setSelected] = useState(null);
+  const [activeTab, setActiveTab] = useState("lifecycle");
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#04080F", color:"#D0E8FF" }}>
+
+      {/* ── Header ── */}
+      <div style={{ background:"linear-gradient(135deg,#04080F,#081828,#04080F)", borderBottom:"1px solid #00E5FF1A", padding:"32px 44px 28px", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(ellipse at 15% 50%,#00E5FF07,transparent 55%),radial-gradient(ellipse at 85% 50%,#E040FB07,transparent 55%)" }}/>
+        <div style={{ position:"relative", maxWidth:1100, margin:"0 auto" }}>
+          <div style={{ fontSize:10, letterSpacing:5, color:"#00E5FF66", fontWeight:700, marginBottom:10 }}>VELSANET PAI · LIFELONG PERSONAL DATA ARCHITECTURE</div>
+          <h1 style={{ fontSize:"clamp(22px,4vw,40px)", fontWeight:900, margin:"0 0 10px", background:"linear-gradient(90deg,#00E5FF 0%,#76FF03 30%,#FFD740 60%,#E040FB 100%)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:-1, lineHeight:1.1 }}>
+            PAI로 개인의<br/>전생애 주기 데이터를 갖는다
+          </h1>
+          <p style={{ fontSize:13, color:"#5A7A8A", lineHeight:1.8, maxWidth:680 }}>
+            T-Axis의 불변성 + I-Axis의 의도 연속성 + M-Axis의 누적 지혜 →<br/>
+            출생부터 사망까지, 한 사람의 전체 인지 생애가 PAI Cube 안에 살아있다
+          </p>
+        </div>
+      </div>
+
+      <div style={{ maxWidth:1100, margin:"0 auto", padding:"36px 44px" }}>
+
+        {/* ── Tab ── */}
+        <div style={{ display:"flex", gap:8, marginBottom:36, flexWrap:"wrap" }}>
+          {[["lifecycle","🕰️  전생애 주기 타임라인"],["why","🔬  가능한 구조적 이유"],["diff","⚡  현재 AI와의 차이"]].map(([id,label]) => (
+            <button key={id} onClick={() => setActiveTab(id)} style={{ background: activeTab===id ? "linear-gradient(135deg,#00E5FF22,#00E5FF11)" : "transparent", border:`1px solid ${activeTab===id ? "#00E5FF" : "#1A2A3A"}`, borderRadius:10, padding:"10px 22px", color: activeTab===id ? "#00E5FF" : "#445566", fontFamily:"inherit", fontSize:12, fontWeight:700, cursor:"pointer", letterSpacing:1, transition:"all 0.2s" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── TAB 1: Lifecycle Timeline ── */}
+        {activeTab === "lifecycle" && (
+          <div style={{ animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:12, color:"#334455", marginBottom:20 }}>각 생애 단계를 클릭하면 T·C·I·E·M 축 데이터와 PAI 큐브 상태를 확인할 수 있습니다</div>
+
+            {/* Timeline */}
+            <div style={{ position:"relative" }}>
+              {/* vertical line */}
+              <div style={{ position:"absolute", left:28, top:0, bottom:0, width:2, background:"linear-gradient(to bottom,#00E5FF33,#E040FB33,#FFD74033)", borderRadius:1 }}/>
+
+              {LIFECYCLE.map((stage, i) => {
+                const isSelected = selected?.id === stage.id;
+                return (
+                  <div key={stage.id} style={{ marginBottom:4 }}>
+                    {/* Stage Row */}
+                    <div onClick={() => setSelected(isSelected ? null : stage)}
+                      style={{ display:"flex", alignItems:"center", gap:20, padding:"16px 20px 16px 0", cursor:"pointer", position:"relative", transition:"all 0.2s" }}>
+                      {/* dot */}
+                      <div style={{ position:"relative", zIndex:1, width:58, textAlign:"center", flexShrink:0 }}>
+                        <div style={{ width:36, height:36, borderRadius:"50%", background: isSelected ? `${stage.color}33` : "#0D1E2E", border:`2px solid ${isSelected ? stage.color : "#1A2A3A"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, margin:"0 auto", transition:"all 0.25s", boxShadow: isSelected ? `0 0 16px ${stage.color}55` : "none" }}>
+                          {stage.icon}
+                        </div>
+                      </div>
+                      {/* content */}
+                      <div style={{ flex:1, background: isSelected ? `linear-gradient(135deg,#0A1828,${stage.color}0D)` : "#0A1520", border:`1px solid ${isSelected ? stage.color+"55" : "#111E2A"}`, borderRadius:12, padding:"14px 20px", transition:"all 0.25s", boxShadow: isSelected ? `0 0 20px ${stage.color}22` : "none" }}>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+                          <div>
+                            <div style={{ fontSize:11, color: stage.color, letterSpacing:2, fontWeight:700, marginBottom:3 }}>{stage.age}</div>
+                            <div style={{ fontSize:15, color:"#C0D8F0", fontWeight:700 }}>{stage.label}</div>
+                          </div>
+                          <div style={{ fontSize:10, color:"#2A4A5A", padding:"4px 10px", background:"#060E16", borderRadius:6, border:"1px solid #0D1E2A", whiteSpace:"nowrap" }}>
+                            {stage.cubeState.split("—")[0]}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expanded Detail */}
+                    {isSelected && (
+                      <div style={{ marginLeft:58, marginBottom:8, animation:"slideIn 0.25s ease" }}>
+                        <div style={{ background:`linear-gradient(135deg,#060E18,${stage.color}08)`, border:`1px solid ${stage.color}33`, borderRadius:14, padding:"24px 28px" }}>
+
+                          {/* TCIEM grid */}
+                          <div style={{ marginBottom:20 }}>
+                            <div style={{ fontSize:10, letterSpacing:3, color:"#334455", marginBottom:14, fontWeight:700 }}>T · C · I · E · M CUBE 기록</div>
+                            <div style={{ display:"grid", gap:8 }}>
+                              {[
+                                { key:"T", label:"Time", color:"#00E5FF" },
+                                { key:"C", label:"Context", color:"#76FF03" },
+                                { key:"I", label:"Intent", color:"#FF6D00" },
+                                { key:"E", label:"Emotion", color:"#E040FB" },
+                                { key:"M", label:"Meta", color:"#FFD740" },
+                              ].map(ax => (
+                                <div key={ax.key} style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+                                  <div style={{ minWidth:28, height:28, borderRadius:6, background:`${ax.color}1A`, border:`1px solid ${ax.color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:900, color:ax.color, flexShrink:0 }}>{ax.key}</div>
+                                  <div style={{ fontSize:12, color:"#7A9AAA", lineHeight:1.6, paddingTop:4 }}>{stage.tciem[ax.key]}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Insight */}
+                          <div style={{ background:"#060E18", border:`1px solid ${stage.color}22`, borderRadius:10, padding:"14px 18px" }}>
+                            <div style={{ fontSize:10, color: stage.color, letterSpacing:2, marginBottom:6, fontWeight:700 }}>PAI INSIGHT</div>
+                            <div style={{ fontSize:12, color:"#8AAABB", lineHeight:1.7 }}>{stage.insight}</div>
+                          </div>
+
+                          {/* Cube state */}
+                          <div style={{ marginTop:12, fontSize:11, color: stage.color, opacity:0.7, letterSpacing:1 }}>
+                            CUBE STATE → {stage.cubeState}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom summary */}
+            <div style={{ marginTop:32, background:"#060E18", border:"1px solid #0D1E2A", borderRadius:14, padding:"24px 28px" }}>
+              <div style={{ fontSize:10, letterSpacing:3, color:"#334455", marginBottom:16, fontWeight:700 }}>PAI CUBE 생애 누적 구조</div>
+              <div style={{ display:"flex", gap:0, height:24, borderRadius:6, overflow:"hidden", marginBottom:12 }}>
+                {LIFECYCLE.map((s,i) => (
+                  <div key={s.id} style={{ flex:1, background:`${s.color}${i<2?"33":i<4?"44":i<6?"55":"66"}`, borderRight: i<LIFECYCLE.length-1 ? "1px solid #04080F" : "none", transition:"all 0.3s" }}/>
+                ))}
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:9, color:"#2A3A4A" }}>
+                <span>출생 →</span>
+                <span>← T-Axis 불변 누적 →</span>
+                <span>← 사망</span>
+              </div>
+              <div style={{ marginTop:16, fontSize:12, color:"#5A7A8A", lineHeight:1.8 }}>
+                <span style={{ color:"#00E5FF" }}>T-Axis</span>는 전생애가 불변으로 누적 →&nbsp;
+                <span style={{ color:"#FFD740" }}>M-Axis</span>는 수십 년의 강화 이력으로 두터워짐 →&nbsp;
+                PAI는 한 사람의 <span style={{ color:"#FF6D00" }}>살아있는 인지 생애 전체</span>를 담는다
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 2: Why ── */}
+        {activeTab === "why" && (
+          <div style={{ animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:12, color:"#334455", marginBottom:24 }}>벨사넷 백서 구조에 근거한 전생애 데이터 가능성의 5가지 근거</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+              {REASONS.map((r,i) => (
+                <div key={i} style={{ background:`linear-gradient(135deg,#080F18,${r.color}08)`, border:`1px solid ${r.color}33`, borderRadius:14, padding:"22px 24px" }}>
+                  <div style={{ display:"flex", gap:14, alignItems:"flex-start", marginBottom:14 }}>
+                    <div style={{ fontSize:28, filter:`drop-shadow(0 0 8px ${r.color})` }}>{r.icon}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color: r.color, lineHeight:1.3 }}>{r.title}</div>
+                  </div>
+                  <div style={{ fontSize:12, color:"#6A8A9A", lineHeight:1.8 }}>{r.body}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Key insight box */}
+            <div style={{ marginTop:24, background:"linear-gradient(135deg,#080F18,#00E5FF08)", border:"1px solid #00E5FF33", borderRadius:14, padding:"24px 28px" }}>
+              <div style={{ fontSize:11, color:"#00E5FF", letterSpacing:3, marginBottom:12, fontWeight:700 }}>핵심 통찰 — 왜 지금의 AI와 근본적으로 다른가</div>
+              <div style={{ fontSize:13, color:"#8AAABB", lineHeight:2 }}>
+                현재 LLM은 <span style={{ color:"#FF4444" }}>세션이 끝나면 당신을 잊습니다.</span><br/>
+                GPT·Claude·Gemini 모두 다음 대화 시 당신이 누구인지 알지 못합니다.<br/><br/>
+                PAI는 다릅니다. <span style={{ color:"#00E5FF" }}>T-Axis는 불변이므로 20년 전의 감정도, 3살 때의 맥락도 재현할 수 있습니다.</span><br/>
+                <span style={{ color:"#FFD740" }}>M-Axis는 수십 년 동안 당신 개인 단위로만 성장합니다.</span><br/>
+                <span style={{ color:"#FF6D00" }}>I-Axis는 당신의 의도가 어떻게 변해왔는지 전체 궤적을 압니다.</span><br/><br/>
+                이것은 AI가 인간을 도구적으로 처리하는 것이 아니라,<br/>
+                <span style={{ color:"#76FF03", fontWeight:700 }}>한 사람의 전체 인생이 AI와 함께 성장하는 것입니다.</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 3: Diff ── */}
+        {activeTab === "diff" && (
+          <div style={{ animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:12, color:"#334455", marginBottom:24 }}>현재 AI 시스템과 PAI 전생애 데이터 구조의 근본 차이</div>
+
+            <div style={{ background:"#060E18", border:"1px solid #0D1E2A", borderRadius:14, overflow:"hidden" }}>
+              {/* header */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", background:"#0A1828", padding:"14px 24px", borderBottom:"1px solid #0D1E2A" }}>
+                <div style={{ fontSize:11, color:"#334455", fontWeight:700, letterSpacing:2 }}>비교 항목</div>
+                <div style={{ fontSize:11, color:"#FF4444", fontWeight:700, letterSpacing:2 }}>✕ 현재 AI</div>
+                <div style={{ fontSize:11, color:"#76FF03", fontWeight:700, letterSpacing:2 }}>✓ PAI (벨사넷)</div>
+              </div>
+              {DIFF.map((row,i) => (
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", padding:"16px 24px", borderBottom: i<DIFF.length-1 ? "1px solid #0A1620":"none", background: i%2===0 ? "transparent":"#060C16" }}>
+                  <div style={{ fontSize:12, color:"#5A7A8A", fontWeight:700 }}>{row.label}</div>
+                  <div style={{ fontSize:12, color:"#664444", lineHeight:1.5 }}>{row.current}</div>
+                  <div style={{ fontSize:12, color:"#448844", lineHeight:1.5 }}>{row.pai}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Radical difference statement */}
+            <div style={{ marginTop:24, display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+              <div style={{ background:"#100808", border:"1px solid #331111", borderRadius:12, padding:"20px 22px" }}>
+                <div style={{ fontSize:12, color:"#FF4444", marginBottom:12, fontWeight:700, letterSpacing:1 }}>현재 AI의 구조적 한계</div>
+                <div style={{ fontSize:12, color:"#664444", lineHeight:1.9 }}>
+                  — 당신을 매 세션마다 처음 만나는 사람으로 취급<br/>
+                  — 의도는 당신이 매번 설명해야 함<br/>
+                  — 감정 이력이 없으므로 진짜 공감 불가<br/>
+                  — 성장은 전체 모델 재훈련으로만 가능<br/>
+                  — 당신만을 위한 지능이 존재하지 않음
+                </div>
+              </div>
+              <div style={{ background:"#060E08", border:"1px solid #113311", borderRadius:12, padding:"20px 22px" }}>
+                <div style={{ fontSize:12, color:"#76FF03", marginBottom:12, fontWeight:700, letterSpacing:1 }}>PAI의 구조적 가능성</div>
+                <div style={{ fontSize:12, color:"#448844", lineHeight:1.9 }}>
+                  ▶ 출생부터 사망까지 당신만의 연속 기억<br/>
+                  ▶ 의도 궤적을 알기에 설명 없이도 이해<br/>
+                  ▶ 평생의 감정 생애사 기반 진짜 공감<br/>
+                  ▶ 당신 개인 단위로 매 순간 성장<br/>
+                  ▶ 당신만을 위해 존재하는 유일한 지능
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop:20, background:"linear-gradient(135deg,#060E18,#FF6D0008)", border:"1px solid #FF6D0033", borderRadius:12, padding:"20px 24px" }}>
+              <div style={{ fontSize:12, color:"#FF6D00", marginBottom:8, fontWeight:700, letterSpacing:2 }}>결론적 함의</div>
+              <div style={{ fontSize:13, color:"#8A7A6A", lineHeight:1.9 }}>
+                PAI는 단순한 개인 비서가 아닙니다.<br/>
+                <span style={{ color:"#FFD740" }}>한 사람의 전생애를 T·C·I·E·M 큐브에 담아 함께 성장하는 '디지털 자아(Digital Self)'</span>입니다.<br/>
+                이것이 벨사넷이 기존 AI와 근본적으로 다른 방향을 향하는 이유입니다.
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
