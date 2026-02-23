@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Velsanet — T·C·I·E·M Cube Architecture</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: #050A10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', 'Courier New', monospace;
+    color: #E0F0FF;
+  }
+  .container {
+    text-align: center;
+    padding: 60px 40px;
+    max-width: 600px;
+  }
+  .badge {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #00E5FF99;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-size: clamp(24px, 5vw, 42px);
+    font-weight: 900;
+    background: linear-gradient(90deg, #00E5FF, #76FF03, #FF6D00, #E040FB, #FFD740);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+    line-height: 1.1;
+  }
+  .sub {
+    font-size: 13px;
+    color: #556677;
+    margin-bottom: 48px;
+    line-height: 1.7;
+  }
+  .sub span { color: #8899AA; }
+  .buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 40px;
+    border-radius: 14px;
+    text-decoration: none;
+    transition: all 0.25s;
+    border: 1px solid #1A3040;
+    background: #0D1E2E;
+    min-width: 180px;
+  }
+  .btn:hover {
+    border-color: #00E5FF;
+    box-shadow: 0 0 24px #00E5FF22;
+    transform: translateY(-2px);
+  }
+  .btn .flag { font-size: 32px; }
+  .btn .lang { font-size: 16px; font-weight: 700; color: #C0E0FF; }
+  .btn .desc { font-size: 11px; color: #445566; letter-spacing: 1px; }
+  .divider {
+    margin: 48px auto 24px;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #1A3040, transparent);
+  }
+  .footer { font-size: 11px; color: #223344; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="badge">VELSANET · WHITE PAPER #06 · MULTIMODAL CUBE ARCHITECTURE</div>
+  <h1>T · C · I · E · M<br/>Cube Processing Flow</h1>
+  <p class="sub">
+    <span>Time · Context · Intent · Emotion · Meta</span><br/>
+    사용자 의도를 5차원 큐브에 저장하는 인지 순환 구조<br/>
+    A complete cognitive circulation structure for intent-native AI
+  </p>
+  <div class="buttons">
+    <a href="ko.html" class="btn">
+      <span class="flag">🇰🇷</span>
+      <span class="lang">한국어</span>
+      <span class="desc">KOREAN</span>
+    </a>
+    <a href="en.html" class="btn">
+      <span class="flag">🇺🇸</span>
+      <span class="lang">English</span>
+      <span class="desc">ENGLISH</span>
+    </a>
+  </div>
+  <div class="divider"></div>
+  <div class="footer">VELSANET RESEARCH LAB · 2026</div>
+</div>
+</body>
+</html>
