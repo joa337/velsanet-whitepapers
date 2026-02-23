@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DIKWEI — Velsanet Cognitive Cycle</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #04060A;
+  --surface: #080C12;
+  --border: #0F1A26;
+  --text: #D0E4F0;
+  --muted: #334455;
+  --dim: #111E2A;
+
+  /* DIKWEI stage colors */
+  --D: #00E5FF;
+  --I: #29B6F6;
+  --K: #76FF03;
+  --W: #FFD740;
+  --E: #FF6D00;
+  --Intent: #E040FB;
+
+  /* AI layer colors (per Node Color WP13) */
+  --PAI: #00E5FF;
+  --AAI: #76FF03;
+  --AsAI: #E040FB;
+  --CUBE: #FFD740;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── BG GRID ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: .35;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(4,6,10,.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--text);
+  text-decoration: none;
+}
+.nav-brand span { color: var(--D); }
+.nav-back {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .2s;
+}
+.nav-back:hover { color: var(--D); }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  z-index: 1;
+  padding: 140px 60px 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: var(--muted);
+}
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(60px, 10vw, 120px);
+  letter-spacing: 4px;
+  line-height: .9;
+  margin-bottom: 24px;
+}
+.hero-title .d { color: var(--D); }
+.hero-title .i { color: var(--I); }
+.hero-title .k { color: var(--K); }
+.hero-title .w { color: var(--W); }
+.hero-title .e { color: var(--E); }
+.hero-title .it { color: var(--Intent); }
+.hero-title .rest { color: var(--text); }
+
+.hero-sub {
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 640px;
+  line-height: 1.85;
+  border-left: 2px solid var(--border);
+  padding-left: 18px;
+}
+.hero-sub strong { color: #00E5FF66; font-weight: 400; }
+
+/* ── MAIN CYCLE DIAGRAM ── */
+.cycle-section {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 60px 80px;
+}
+
+.cycle-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: var(--muted);
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.cycle-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Circular diagram wrapper */
+.cycle-diagram {
+  position: relative;
+  width: 480px;
+  height: 480px;
+  margin: 0 auto 60px;
+}
+
+.cycle-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed #1A2A3A;
+}
+
+/* Center intent label */
+.cycle-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 10;
+}
+.cycle-center-word {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 4px;
+  color: var(--Intent);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.cycle-center-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+
+/* Stage nodes positioned around circle */
+.stage-node {
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .25s;
+  border: 2px solid;
+  background: var(--bg);
+  text-align: center;
+  z-index: 5;
+  /* default color set by inline style */
+}
+.stage-node:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 32px var(--nc);
+}
+.stage-node.active {
+  transform: scale(1.15);
+  box-shadow: 0 0 40px var(--nc);
+  background: var(--dim);
+}
+.stage-letter {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+.stage-word {
+  font-family: 'DM Mono', monospace;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  opacity: .75;
+  margin-top: 2px;
+}
+
+/* Arrow between stages — drawn with SVG overlay */
+.cycle-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Positions: 6 stages evenly around circle (radius ~190px from center 240,240) */
+/* D=top, I=top-right, K=bottom-right, W=bottom, E=bottom-left, Intent=top-left */
+
+/* ── STAGE DETAIL PANEL ── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.detail-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 26px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.detail-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--nc, var(--D));
+}
+.detail-card:hover {
+  border-color: var(--nc, var(--D));
+  box-shadow: 0 4px 24px rgba(0,229,255,.06);
+}
+.dc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.dc-letter {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  color: var(--nc, var(--D));
+  line-height: 1;
+}
+.dc-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.dc-title span {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--nc, var(--D));
+  opacity: .7;
+  font-weight: 400;
+  margin-top: 3px;
+}
+.dc-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin-bottom: 14px;
+}
+.dc-layer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(0,229,255,.06);
+  color: var(--nc, var(--D));
+  border: 1px solid rgba(0,229,255,.15);
+}
+.dc-layer-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--nc, var(--D));
+}
+
+/* ── FULL LOOP DIAGRAM ── */
+.loop-section {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 60px 80px;
+}
+.loop-flow {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 36px;
+  overflow: hidden;
+  position: relative;
+}
+.loop-flow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,229,255,.03), transparent 60%);
+}
+
+.loop-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+
+.loop-chain {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 12px;
+}
+
+.loop-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  min-width: 80px;
+  position: relative;
+  transition: all .2s;
+}
+.loop-node:hover {
+  border-color: var(--nc);
+  transform: translateY(-2px);
+}
+.loop-node-icon {
+  font-size: 18px;
+}
+.loop-node-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--nc);
+  line-height: 1;
+}
+.loop-node-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.loop-arrow {
+  font-size: 14px;
+  color: var(--muted);
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.loop-arrow.return {
+  color: var(--Intent);
+}
+
+.loop-note {
+  margin-top: 24px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 1px;
+  line-height: 1.7;
+}
+.loop-note em {
+  color: #00E5FF55;
+  font-style: normal;
+}
+
+/* ── LAYER MAP ── */
+.layer-section {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 60px 80px;
+}
+.layer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.layer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.layer-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(to top, color-mix(in srgb, var(--lc) 5%, transparent), transparent);
+}
+.layer-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.layer-poly {
+  font-size: 32px;
+  line-height: 1;
+}
+.layer-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: var(--lc);
+}
+.layer-node {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.layer-stage {
+  display: inline-block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--lc) 12%, transparent);
+  color: var(--lc);
+  border: 1px solid color-mix(in srgb, var(--lc) 25%, transparent);
+}
+.layer-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+/* ── INTERACTIVE STEP-THROUGH ── */
+.stepthrough {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 60px 80px;
+}
+.step-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.step-progress {
+  display: flex;
+  height: 3px;
+}
+.step-prog-seg {
+  flex: 1;
+  background: var(--border);
+  transition: background .3s;
+}
+.step-prog-seg.done { background: var(--sc, var(--D)); }
+
+.step-body {
+  padding: 40px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  min-height: 280px;
+}
+.step-left {}
+.step-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.step-letter {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 80px;
+  line-height: .9;
+  color: var(--sc, var(--D));
+  margin-bottom: 8px;
+  transition: color .3s;
+}
+.step-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.step-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.85;
+}
+.step-right {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  border-top: 2px solid var(--sc, var(--D));
+}
+.step-right-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.step-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.step-meta-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.step-meta-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--sc, var(--D));
+  min-width: 70px;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+.step-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 48px;
+  border-top: 1px solid var(--border);
+}
+.step-dots {
+  display: flex;
+  gap: 8px;
+}
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 1px solid var(--muted);
+  cursor: pointer;
+  transition: all .2s;
+}
+.step-dot.active {
+  background: var(--sc, var(--D));
+  border-color: var(--sc, var(--D));
+  box-shadow: 0 0 8px var(--sc, var(--D));
+}
+.btn-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-step:hover:not(:disabled) {
+  border-color: var(--sc, var(--D));
+  color: var(--sc, var(--D));
+}
+.btn-step:disabled { opacity: .3; cursor: default; }
+.btn-step.primary {
+  background: var(--sc, var(--D));
+  border-color: var(--sc, var(--D));
+  color: #000;
+  font-weight: 700;
+}
+.btn-step.primary:hover { opacity: .85; }
+
+/* ── FOOTER ── */
+.page-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.footer-left {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+.footer-links {
+  display: flex;
+  gap: 20px;
+}
+.footer-link {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .2s;
+}
+.footer-link:hover { color: var(--D); }
+
+/* section label shared */
+.sec-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: var(--muted);
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+@media (max-width: 768px) {
+  .hero, .cycle-section, .loop-section, .layer-section, .stepthrough { padding-left: 24px; padding-right: 24px; }
+  .cycle-diagram { width: 320px; height: 320px; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .step-body { grid-template-columns: 1fr; gap: 24px; }
+  .layer-grid { grid-template-columns: 1fr; }
+  .step-controls { padding: 16px 24px; }
+  .page-footer { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="nav-brand">VELSA<span>NET</span></a>
+  <a href="index.html" class="nav-back">← BACK TO HOME</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">WHITE PAPER #08 · AI ARCHITECTURE · COGNITIVE CYCLE</div>
+  <h1 class="hero-title">
+    <span class="d">D</span><span class="i">I</span><span class="k">K</span><span class="w">W</span><span class="e">E</span><span class="it">I</span>
+    <span class="rest"> CYCLE</span>
+  </h1>
+  <p class="hero-sub">
+    Velsanet's cognitive architecture extends the classical DIKW hierarchy into a
+    <strong>closed, executable loop</strong> — adding Execution and Intent as structural stages.<br/><br/>
+    Data → Information → Knowledge → Wisdom → Execution → Intent.<br/>
+    Intent is not the end. It is the beginning of the next cycle.<br/>
+    Every node in Velsanet runs this loop continuously.
+  </p>
+</section>
+
+<!-- INTERACTIVE STEP-THROUGH -->
+<section class="stepthrough">
+  <div class="sec-label">INTERACTIVE · STEP THROUGH EACH STAGE</div>
+  <div class="step-container" id="stepContainer">
+    <div class="step-progress" id="stepProgress">
+      <div class="step-prog-seg done" id="prog0"></div>
+      <div class="step-prog-seg" id="prog1"></div>
+      <div class="step-prog-seg" id="prog2"></div>
+      <div class="step-prog-seg" id="prog3"></div>
+      <div class="step-prog-seg" id="prog4"></div>
+      <div class="step-prog-seg" id="prog5"></div>
+    </div>
+    <div class="step-body" id="stepBody">
+      <!-- filled by JS -->
+    </div>
+    <div class="step-controls">
+      <button class="btn-step" id="btnPrev" onclick="prevStep()">← PREV</button>
+      <div class="step-dots" id="stepDots"></div>
+      <button class="btn-step primary" id="btnNext" onclick="nextStep()">NEXT →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FULL LOOP -->
+<section class="loop-section">
+  <div class="sec-label">FULL COGNITIVE CIRCULATION LOOP</div>
+  <div class="loop-flow">
+    <div class="loop-title">CUBE → DEQ → PAI → AAI → AsAI → AAI → PAI → DEQ → CUBE</div>
+    <div class="loop-chain">
+      <div class="loop-node" style="--nc:var(--CUBE)">
+        <div class="loop-node-icon">⬡</div>
+        <div class="loop-node-label" style="color:var(--CUBE)">CUBE</div>
+        <div class="loop-node-sub">Raw Memory<br/>384 lanes</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-node" style="--nc:#888">
+        <div class="loop-node-icon">⊕</div>
+        <div class="loop-node-label" style="color:#888">DEQ</div>
+        <div class="loop-node-sub">Dedicated<br/>Equipment</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-node" style="--nc:var(--PAI)">
+        <div class="loop-node-icon">◈</div>
+        <div class="loop-node-label" style="color:var(--PAI)">PAI</div>
+        <div class="loop-node-sub">Node_8<br/>D→I stage</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-node" style="--nc:var(--AAI)">
+        <div class="loop-node-icon">◉</div>
+        <div class="loop-node-label" style="color:var(--AAI)">AAI</div>
+        <div class="loop-node-sub">Node_12<br/>I→K stage</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-node" style="--nc:var(--AsAI)">
+        <div class="loop-node-icon">⬟</div>
+        <div class="loop-node-label" style="color:var(--AsAI)">AsAI</div>
+        <div class="loop-node-sub">Node_20<br/>K→W→E stage</div>
+      </div>
+      <div class="loop-arrow return">→</div>
+      <div class="loop-node" style="--nc:var(--AAI)">
+        <div class="loop-node-icon">◉</div>
+        <div class="loop-node-label" style="color:var(--AAI)">AAI</div>
+        <div class="loop-node-sub">Return<br/>grounding</div>
+      </div>
+      <div class="loop-arrow return">→</div>
+      <div class="loop-node" style="--nc:var(--PAI)">
+        <div class="loop-node-icon">◈</div>
+        <div class="loop-node-label" style="color:var(--PAI)">PAI</div>
+        <div class="loop-node-sub">Intent<br/>formation</div>
+      </div>
+      <div class="loop-arrow return">→</div>
+      <div class="loop-node" style="--nc:#888">
+        <div class="loop-node-icon">⊕</div>
+        <div class="loop-node-label" style="color:#888">DEQ</div>
+        <div class="loop-node-sub">Write-back<br/>conversion</div>
+      </div>
+      <div class="loop-arrow return">→</div>
+      <div class="loop-node" style="--nc:var(--Intent)">
+        <div class="loop-node-icon">⬡</div>
+        <div class="loop-node-label" style="color:var(--Intent)">CUBE+</div>
+        <div class="loop-node-sub">Memory<br/>updated</div>
+      </div>
+    </div>
+    <div class="loop-note">
+      The Dedicated Equipment (DEQ) is the <em>first and last structural gate</em> of the DIKWEI flow.<br/>
+      It converts Cube data into PAI meaning units — and rewrites AsAI outputs back into Cube memory.<br/>
+      This is not a converter. It is <em>Velsanet's synaptic transformer</em>.
+    </div>
+  </div>
+</section>
+
+<!-- AI LAYER MAP -->
+<section class="layer-section">
+  <div class="sec-label">DIKWEI STAGE → AI LAYER MAPPING</div>
+  <div class="layer-grid">
+    <div class="layer-card" style="--lc:var(--PAI)">
+      <div class="layer-top">
+        <div class="layer-poly">◈</div>
+        <div>
+          <div class="layer-name">PAI</div>
+          <div class="layer-node">NODE_8 · OCTAHEDRON · CYAN</div>
+        </div>
+      </div>
+      <div class="layer-stage">D → I STAGE</div>
+      <div class="layer-desc">
+        Personal AI — the distributed nervous system of Velsanet.<br/>
+        Receives raw multimodal signals (Data) from Cube.<br/>
+        Extracts meaning, context, and intent-relevant patterns (Information).<br/>
+        Multiple PAIs operate in parallel with sequential loops to preserve temporal causality.<br/>
+        Forwards structured meaning units to AAI.
+      </div>
+    </div>
+    <div class="layer-card" style="--lc:var(--AAI)">
+      <div class="layer-top">
+        <div class="layer-poly">◉</div>
+        <div>
+          <div class="layer-name">AAI</div>
+          <div class="layer-node">NODE_12 · DODECAHEDRON · GREEN</div>
+        </div>
+      </div>
+      <div class="layer-stage">I → K STAGE</div>
+      <div class="layer-desc">
+        Agent AI — structural intelligence hub.<br/>
+        Does not perceive or execute — only mediates intent.<br/>
+        Reconciles heterogeneous PAI inputs into coherent Structured Intent Packets (Knowledge).<br/>
+        Acts as the structural gateway to AsAI — only aligned intents are elevated.<br/>
+        Returns grounded results downward to PAI after AsAI completes.
+      </div>
+    </div>
+    <div class="layer-card" style="--lc:var(--AsAI)">
+      <div class="layer-top">
+        <div class="layer-poly">⬟</div>
+        <div>
+          <div class="layer-name">AsAI</div>
+          <div class="layer-node">NODE_20 · ICOSAHEDRON · VIOLET</div>
+        </div>
+      </div>
+      <div class="layer-stage">K → W → E STAGE</div>
+      <div class="layer-desc">
+        Assistant AI — wisdom-based execution layer.<br/>
+        Receives Knowledge from AAI and applies situational judgment (Wisdom).<br/>
+        Executes through contextual adaptation — not fixed rules (Execution).<br/>
+        The most powerful layer is the structurally least free.<br/>
+        Returns cognitive results to AAI for redistribution and memory update.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="page-footer">
+  <div class="footer-left">VELSANET · WHITE PAPER #08 · DIKWEI COGNITIVE CYCLE</div>
+  <div class="footer-links">
+    <a href="index.html" class="footer-link">HOME</a>
+    <a href="ko.html" class="footer-link">CUBE KO</a>
+    <a href="en.html" class="footer-link">CUBE EN</a>
+    <a href="pai_lifelong_lifecycle.html" class="footer-link">PAI KO</a>
+    <a href="pai_lifelong_lifecycle_en.html" class="footer-link">PAI EN</a>
+    <a href="whitepapers/WP08_AI/Velsanet%20AI%20WhitePaper%20%2308(v1.3_20251229).pdf" class="footer-link" target="_blank">↓ PDF</a>
+  </div>
+</footer>
+
+<script>
+const stages = [
+  {
+    letter: 'D',
+    name: 'Data',
+    color: '#00E5FF',
+    step: '01 / 06',
+    desc: 'Raw multimodal signals generated by devices, sensors, and users. Collected at Node_4 (Tetrahedron) and Node_6 (Hexahedron) access layers. Stored in the Raw Memory Layer of the Cube — immutable and lossless. The Cube holds up to 384 optical cores per Node_8 face. This is the substrate from which all cognition originates.',
+    meta: [
+      { key: 'ORIGIN', val: 'Sensors · Devices · User interaction' },
+      { key: 'STORAGE', val: 'Raw Memory Layer (Cube) — immutable' },
+      { key: 'NODE', val: 'Node_4 (T₄) · Node_6 (C₆) — access layer' },
+      { key: 'NEXT', val: 'DEQ converts → PAI 8-channel input' },
+    ]
+  },
+  {
+    letter: 'I',
+    name: 'Information',
+    color: '#29B6F6',
+    step: '02 / 06',
+    desc: 'PAI (Node_8, Octahedron) extracts meaning from raw data through the DIKWEI-based first-stage meaning extraction engine. Multimodal signals are grouped into Semantic Event Units (SEU) of 0.8–1.5 seconds and indexed across the T·C·I·E·M Cube axes. PAI transforms raw perception into intent-relevant information units and forwards structured meaning to AAI.',
+    meta: [
+      { key: 'LAYER', val: 'PAI — Personal AI (Node_8 Octahedron)' },
+      { key: 'PROCESS', val: 'SEU formation · Cube axis indexing' },
+      { key: 'OUTPUT', val: 'Granular meaning units → AAI' },
+      { key: 'COLOR', val: 'Cyan (Node Color WP13)' },
+    ]
+  },
+  {
+    letter: 'K',
+    name: 'Knowledge',
+    color: '#76FF03',
+    step: '03 / 06',
+    desc: 'AAI (Node_12, Dodecahedron) reconciles heterogeneous PAI inputs from distributed personal agents into coherent Structured Intent Packets. AAI performs structural alignment — not aggregation. It synthesizes multiple PAI streams into situational models. Only structurally aligned intents are elevated to AsAI. Direct AAI↔AAI links are structurally prohibited.',
+    meta: [
+      { key: 'LAYER', val: 'AAI — Agent AI (Node_12 Dodecahedron)' },
+      { key: 'PROCESS', val: 'Intent mediation · Structural alignment' },
+      { key: 'OUTPUT', val: 'Structured Intent Packets → AsAI' },
+      { key: 'RULE', val: 'No direct AAI↔AAI or AsAI↔AsAI links' },
+    ]
+  },
+  {
+    letter: 'W',
+    name: 'Wisdom',
+    color: '#FFD740',
+    step: '04 / 06',
+    desc: 'AsAI (Node_20, Icosahedron) receives Knowledge from AAI and applies situational judgment to form Wisdom. This is not rule-based decision making — it is contextual adaptation integrating knowledge across domains and regions. AsAI integrates cross-regional intentions and operates with maximum cognitive power and minimum structural freedom.',
+    meta: [
+      { key: 'LAYER', val: 'AsAI — Assistant AI (Node_20 Icosahedron)' },
+      { key: 'PROCESS', val: 'Situational judgment · Cross-domain synthesis' },
+      { key: 'PRINCIPLE', val: 'Max power = min structural freedom' },
+      { key: 'COLOR', val: 'Violet (Node Color WP13)' },
+    ]
+  },
+  {
+    letter: 'E',
+    name: 'Execution',
+    color: '#FF6D00',
+    step: '05 / 06',
+    desc: 'AsAI translates Wisdom into executable actions through contextual adaptation — not hardcoded policies. Execution results are not discarded. They flow back: AsAI → AAI → PAI → DEQ → Cube. The return path through AAI ensures structural grounding before results reach personal memory. Every execution updates the Cube, reinforcing the cognitive substrate.',
+    meta: [
+      { key: 'LAYER', val: 'AsAI (execution) → AAI → PAI (return)' },
+      { key: 'PROCESS', val: 'Contextual action · Return flow' },
+      { key: 'DEQ ROLE', val: 'Converts AsAI results → Cube packets' },
+      { key: 'RESULT', val: 'Cube memory update — organic growth' },
+    ]
+  },
+  {
+    letter: 'I',
+    name: 'Intent',
+    color: '#E040FB',
+    step: '06 / 06',
+    desc: 'Intent is not the end of the cycle — it is the substrate that drives the next cycle. After execution results are written back to the Cube, PAI forms new intent from updated memory. Intent governs every subsequent phase: perception, routing, connection, and action. In Velsanet, intent is not a trigger — it is the axis around which the entire cognitive architecture revolves.',
+    meta: [
+      { key: 'ROLE', val: 'Substrate — not a trigger' },
+      { key: 'FORMED AT', val: 'PAI — from updated Cube memory' },
+      { key: 'EFFECT', val: 'Initiates next DIKWEI cycle' },
+      { key: 'PRINCIPLE', val: 'Continuous learning · Organic growth' },
+    ]
+  }
+];
+
+let current = 0;
+
+function render() {
+  const s = stages[current];
+  // progress bar
+  for (let i = 0; i < 6; i++) {
+    document.getElementById('prog' + i).style.background = i <= current ? s.color : 'var(--border)';
+  }
+  // step body
+  document.getElementById('stepBody').innerHTML = `
+    <div class="step-left">
+      <div class="step-num">${s.step}</div>
+      <div class="step-letter" style="color:${s.color}">${s.letter}</div>
+      <div class="step-name">${s.name}</div>
+      <div class="step-desc">${s.desc}</div>
+    </div>
+    <div class="step-right" style="border-top-color:${s.color}">
+      <div class="step-right-label">STRUCTURAL DETAILS</div>
+      <div class="step-meta">
+        ${s.meta.map(m => `
+          <div class="step-meta-item">
+            <div class="step-meta-key" style="color:${s.color}">${m.key}</div>
+            <div>${m.val}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  // dots
+  const dotsEl = document.getElementById('stepDots');
+  dotsEl.innerHTML = stages.map((_, i) => `
+    <div class="step-dot ${i === current ? 'active' : ''}"
+         style="${i === current ? `background:${s.color};border-color:${s.color};box-shadow:0 0 8px ${s.color}` : ''}"
+         onclick="goStep(${i})"></div>
+  `).join('');
+  // buttons
+  document.getElementById('btnPrev').disabled = current === 0;
+  const nextBtn = document.getElementById('btnNext');
+  nextBtn.style.background = s.color;
+  nextBtn.style.borderColor = s.color;
+  nextBtn.textContent = current === 5 ? '↺ RESTART' : 'NEXT →';
+}
+
+function nextStep() {
+  current = (current + 1) % 6;
+  render();
+}
+function prevStep() {
+  if (current > 0) { current--; render(); }
+}
+function goStep(i) { current = i; render(); }
+
+render();
+</script>
+</body>
+</html>
