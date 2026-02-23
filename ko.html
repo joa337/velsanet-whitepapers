@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Velsanet T·C·I·E·M 큐브 처리 과정</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #050A10; font-family: 'DM Mono', 'Courier New', monospace; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.4;} }
+  ::-webkit-scrollbar { width: 6px; } 
+  ::-webkit-scrollbar-track { background: #050A10; }
+  ::-webkit-scrollbar-thumb { background: #1A3040; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const AXES = [
+  { id:"T", name:"Time", label:"T-Axis", sub:"불변 기억층 / Invariant Memory", color:"#00E5FF", glow:"#00E5FF44",
+    description:"모든 사건의 타임스탬프·이벤트 ID·지속시간을 불변(Immutable)으로 저장. 과거는 절대 수정되지 않으며, 전체 추론의 시간적 기준점이 됨.",
+    inputs:["타임스탬프 (Timestamp)","이벤트 ID (Event ID)","지속시간 (Duration)","인과 순서 (Causality Link)"],
+    source:"CH3 — Spatial-Temporal Data", icon:"⧖" },
+  { id:"C", name:"Context", label:"C-Axis", sub:"상황 이해층 / Situational Understanding", color:"#76FF03", glow:"#76FF0344",
+    description:"위치·감지 객체·환경 특성·동작 패턴·주변 오디오 신호를 멀티모달 융합으로 구성. 고충실도 시나리오 재구성을 가능하게 함.",
+    inputs:["GPS/실내 공간 벡터","감지 객체 (Objects)","환경 특성 (Environment)","모션·제스처 패턴","배경 오디오 신호"],
+    source:"CH1 Video + CH2 Audio + CH3 Spatial", icon:"◈" },
+  { id:"I", name:"Intent", label:"I-Axis", sub:"의도 추출층 / Meaning Extraction", color:"#FF6D00", glow:"#FF6D0044",
+    description:"사용자 행동 패턴·음성 의미론·주의 집중·상호작용 이력에서 의도를 추출. PAI를 데이터 중심이 아닌 '의도 중심 시스템'으로 전환하는 핵심 축.",
+    inputs:["행동 패턴 (Behavior)","음성 의미론 (Voice Semantics)","주의 집중 (Attention Focus)","상호작용 이력 (History)","의도 유형 분류"],
+    source:"CH1 + CH2 + CH4 Biometric", icon:"⊛" },
+  { id:"E", name:"Emotion", label:"E-Axis", sub:"감정 지능층 / Affective Intelligence", color:"#E040FB", glow:"#E040FB44",
+    description:"얼굴 미세 표정·음성 톤·생체 신호·행동 강도에서 감정 상태를 추출. 기억 중요도 순위 결정과 감정 기반 검색에 활용됨.",
+    inputs:["얼굴 미세표정 (Micro-expressions)","음성 톤 (Voice Tone)","생체 신호 (Physiological)","행동 강도 (Behavior Intensity)"],
+    source:"CH4 Biometric + CH1 Video + CH2 Audio", icon:"◉" },
+  { id:"M", name:"Meta", label:"M-Axis", sub:"자기진화층 / Self-Evolution Layer", color:"#FFD740", glow:"#FFD74044",
+    description:"저장 시점에는 비어 있으나, AAI(L2)와 AsAI(L3)가 동작하면서 동적으로 채워짐. 신뢰 수준·정책 버전·수정 태그·강화/패널티 이력이 기록되어 유기적 성장(L3 Intelligence)의 기반이 됨.",
+    inputs:["신뢰 수준 (Trust Level)","정책 버전 (Policy Versions)","수정 태그 (Correction Tags)","일탈 패턴 (Deviance Patterns)","강화/패널티 이력"],
+    source:"AAI(L2) → AsAI(L3) 동적 기입", icon:"⬡", dynamic:true },
+];
+
+const SEU_CHANNELS = [
+  { id:"CH1", label:"Video Frames", icon:"📷", detail:"얼굴 표정·시선·손 동작 감지" },
+  { id:"CH2", label:"Audio Stream", icon:"🎙️", detail:"한숨 소리·키보드 타이핑·카페 배경음" },
+  { id:"CH3", label:"Spatial-Temporal", icon:"📍", detail:"카페 GPS·착석 시간 14:32:08" },
+  { id:"CH4", label:"Biometric", icon:"💓", detail:"심박 미세 상승·손가락 움직임 패턴" },
+];
+
+const FLOW_PHASES = [
+  { label:"신호 수신", desc:"멀티모달 채널 병렬 분리", icon:"📡" },
+  { label:"SEU 형성", desc:"0.8~1.5초 단위 의미 이벤트 묶음", icon:"⬡" },
+  { label:"축 분해", desc:"T·C·I·E·M 5축 동시 추출", icon:"◈" },
+  { label:"큐브 저장", desc:"구조적 의미 인덱스 기록", icon:"🧊" },
+  { label:"PAI 처리", desc:"의도 단위 → AAI 전달", icon:"🔷" },
+  { label:"AAI / AsAI", desc:"M-Axis 동적 기입 (유기적 성장)", icon:"🔶" },
+];
+
+function Section({ label, children }) {
+  return (
+    <div style={{ marginBottom:40 }}>
+      <div style={{ fontSize:11, letterSpacing:3, color:"#334455", fontWeight:700, marginBottom:16, paddingBottom:10, borderBottom:"1px solid #111E2A" }}>
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function App() {
+  const [activeAxis, setActiveAxis] = useState(null);
+  const [phase, setPhase] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [mFilled, setMFilled] = useState(false);
+  const ivRef = useRef(null);
+
+  useEffect(() => {
+    if (running) {
+      ivRef.current = setInterval(() => {
+        setPhase(p => {
+          if (p >= FLOW_PHASES.length - 1) { setRunning(false); setMFilled(true); return p; }
+          return p + 1;
+        });
+      }, 900);
+    }
+    return () => clearInterval(ivRef.current);
+  }, [running]);
+
+  const start = () => { setPhase(0); setMFilled(false); setRunning(true); };
+  const reset = () => { setRunning(false); setPhase(0); setMFilled(false); };
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#050A10", color:"#E0F0FF", fontFamily:"'DM Mono','Courier New',monospace", overflowX:"hidden" }}>
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#050A10 0%,#0A1828 50%,#050A10 100%)", borderBottom:"1px solid #00E5FF22", padding:"28px 40px 24px", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(ellipse at 20% 50%,#00E5FF08 0%,transparent 60%),radial-gradient(ellipse at 80% 50%,#E040FB08 0%,transparent 60%)" }} />
+        <div style={{ position:"relative" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
+            <div>
+              <div style={{ fontSize:11, letterSpacing:4, color:"#00E5FF99", marginBottom:8, fontWeight:700 }}>VELSANET · MULTIMODAL CUBE ARCHITECTURE · WHITE PAPER #06</div>
+              <h1 style={{ fontSize:"clamp(20px,4vw,34px)", fontWeight:900, margin:0, background:"linear-gradient(90deg,#00E5FF,#76FF03,#FF6D00,#E040FB,#FFD740)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:-1 }}>
+                T · C · I · E · M 큐브 처리 과정
+              </h1>
+              <div style={{ fontSize:13, color:"#8899AA", marginTop:6 }}>사용자 의도를 5차원 큐브에 저장하는 완전한 인지 순환 구조</div>
+            </div>
+            <a href="en.html" style={{ background:"#0D1E2E", border:"1px solid #1A3040", borderRadius:8, padding:"8px 16px", color:"#8899AA", textDecoration:"none", fontSize:12, whiteSpace:"nowrap", alignSelf:"flex-start" }}>🌐 English →</a>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding:"32px 40px", maxWidth:1200, margin:"0 auto" }}>
+
+        {/* STEP 01 */}
+        <Section label="STEP 01 · 원시 신호 입력 — Semantic Event Unit (SEU)">
+          <div style={{ background:"#0A1828", border:"1px solid #00E5FF33", borderRadius:12, padding:"20px 24px", marginBottom:20 }}>
+            <div style={{ fontSize:11, color:"#00E5FF99", letterSpacing:3, marginBottom:10 }}>RAW EVENT EXAMPLE</div>
+            <div style={{ fontSize:15, color:"#C0E0FF", lineHeight:1.7, borderLeft:"3px solid #00E5FF", paddingLeft:16, fontStyle:"italic" }}>
+              "사용자가 카페에 앉아 노트북을 바라보며 가볍게 한숨을 쉬고 타이핑을 시작한다."
+            </div>
+            <div style={{ marginTop:14, fontSize:11, color:"#556677" }}>→ SEU 시간 창 : 0.8 ~ 1.5초 | 단일 의미 이벤트 단위로 묶음 처리</div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:12 }}>
+            {SEU_CHANNELS.map(ch => (
+              <div key={ch.id} style={{ background:"#0D1E2E", border:"1px solid #1A3040", borderRadius:10, padding:"14px 18px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                  <span style={{ fontSize:20 }}>{ch.icon}</span>
+                  <div>
+                    <div style={{ fontSize:11, color:"#00E5FF99", letterSpacing:2 }}>{ch.id}</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#C0E0FF" }}>{ch.label}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize:12, color:"#667788", lineHeight:1.5 }}>{ch.detail}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* STEP 02 */}
+        <Section label="STEP 02 · 5축 큐브 분해 — T·C·I·E·M Axis Mapping">
+          <div style={{ marginBottom:14, fontSize:12, color:"#556677" }}>각 축을 클릭하면 세부 처리 내용을 확인할 수 있습니다</div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
+            {AXES.map(ax => (
+              <div key={ax.id} onClick={() => setActiveAxis(activeAxis?.id === ax.id ? null : ax)}
+                style={{ background: activeAxis?.id===ax.id ? `linear-gradient(135deg,#0D1E2E,${ax.color}22)` : "#0D1E2E", border:`1px solid ${activeAxis?.id===ax.id ? ax.color : "#1A3040"}`, borderRadius:12, padding:"18px 14px", cursor:"pointer", transition:"all 0.25s", textAlign:"center", boxShadow: activeAxis?.id===ax.id ? `0 0 20px ${ax.glow}` : "none", position:"relative", overflow:"hidden" }}>
+                {ax.dynamic && mFilled && <div style={{ position:"absolute", top:6, right:6, width:8, height:8, borderRadius:"50%", background:ax.color, boxShadow:`0 0 8px ${ax.color}`, animation:"pulse 1.5s infinite" }} />}
+                <div style={{ fontSize:28, marginBottom:6, filter:`drop-shadow(0 0 8px ${ax.color})` }}>{ax.icon}</div>
+                <div style={{ fontSize:26, fontWeight:900, color:ax.color, letterSpacing:-1, lineHeight:1, marginBottom:4 }}>{ax.id}</div>
+                <div style={{ fontSize:11, color:"#8899AA", fontWeight:600 }}>{ax.name}</div>
+                {ax.dynamic && <div style={{ marginTop:8, fontSize:9, color: mFilled ? ax.color : "#334455", letterSpacing:1, fontWeight:700, transition:"color 0.5s" }}>{mFilled ? "◉ ACTIVE" : "○ EMPTY"}</div>}
+              </div>
+            ))}
+          </div>
+          {activeAxis && (
+            <div style={{ marginTop:16, background:`linear-gradient(135deg,#0A1828,${activeAxis.color}11)`, border:`1px solid ${activeAxis.color}55`, borderRadius:14, padding:"24px 28px", boxShadow:`0 0 30px ${activeAxis.glow}`, animation:"fadeIn 0.2s ease" }}>
+              <div style={{ display:"flex", alignItems:"flex-start", gap:20 }}>
+                <div style={{ fontSize:48, fontWeight:900, color:activeAxis.color, lineHeight:1, minWidth:60 }}>{activeAxis.id}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, color:activeAxis.color, marginBottom:4, letterSpacing:2, fontWeight:700 }}>{activeAxis.label} · {activeAxis.sub}</div>
+                  <div style={{ fontSize:13, color:"#A0B8CC", lineHeight:1.7, marginBottom:16 }}>{activeAxis.description}</div>
+                  <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
+                    <div style={{ flex:1, minWidth:200 }}>
+                      <div style={{ fontSize:10, color:"#556677", letterSpacing:2, marginBottom:8, fontWeight:700 }}>INPUT SIGNALS</div>
+                      {activeAxis.inputs.map((inp,i) => <div key={i} style={{ fontSize:12, color:"#8899AA", display:"flex", alignItems:"center", gap:8, padding:"3px 0" }}><span style={{ color:activeAxis.color, fontSize:8 }}>▶</span>{inp}</div>)}
+                    </div>
+                    <div style={{ minWidth:180 }}>
+                      <div style={{ fontSize:10, color:"#556677", letterSpacing:2, marginBottom:8, fontWeight:700 }}>DATA SOURCE</div>
+                      <div style={{ fontSize:12, color:activeAxis.color, background:`${activeAxis.color}11`, border:`1px solid ${activeAxis.color}33`, borderRadius:8, padding:"8px 12px", lineHeight:1.6 }}>{activeAxis.source}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </Section>
+
+        {/* STEP 03 */}
+        <Section label="STEP 03 · 처리 흐름 시뮬레이션 — CSPE Cognitive Cycle">
+          <div style={{ display:"flex", gap:12, marginBottom:20, flexWrap:"wrap" }}>
+            <button onClick={start} disabled={running} style={{ background: running ? "#1A3040" : "linear-gradient(135deg,#00E5FF,#0088AA)", border:"none", borderRadius:8, color: running ? "#445566" : "#000", fontFamily:"inherit", fontSize:13, fontWeight:700, padding:"10px 24px", cursor: running ? "not-allowed" : "pointer", letterSpacing:1 }}>
+              {running ? "▶ 실행 중..." : "▶ 시뮬레이션 시작"}
+            </button>
+            <button onClick={reset} style={{ background:"transparent", border:"1px solid #334455", borderRadius:8, color:"#667788", fontFamily:"inherit", fontSize:13, padding:"10px 20px", cursor:"pointer" }}>↺ 리셋</button>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:8 }}>
+            {FLOW_PHASES.map((fp,i) => {
+              const active = i===phase && (running||phase>0);
+              const done = i<phase;
+              return (
+                <div key={i} style={{ background: done?"#0D2A1A": active?"#0A1E2E":"#0A1218", border:`1px solid ${done?"#76FF0355": active?"#00E5FF":"#1A2832"}`, borderRadius:10, padding:"16px 12px", textAlign:"center", transition:"all 0.3s", boxShadow: active?"0 0 16px #00E5FF44":"none" }}>
+                  <div style={{ fontSize:22, marginBottom:8 }}>{fp.icon}</div>
+                  <div style={{ fontSize:10, fontWeight:700, color: done?"#76FF03": active?"#00E5FF":"#334455", marginBottom:4 }}>{done?"✓ ":""}{fp.label}</div>
+                  <div style={{ fontSize:10, color:"#445566", lineHeight:1.4 }}>{fp.desc}</div>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* STEP 04 */}
+        <Section label="STEP 04 · 큐브 저장 구조 — SEU 인지 메모리 레코드">
+          <div style={{ background:"#080F18", border:"1px solid #1A3040", borderRadius:14, overflow:"hidden" }}>
+            <div style={{ background:"#0D1E2E", padding:"12px 24px", borderBottom:"1px solid #1A3040", fontSize:11, color:"#00E5FF99", letterSpacing:3, fontWeight:700 }}>SEU CUBE RECORD — 카페 사용자 예시</div>
+            <div style={{ padding:"20px 24px" }}>
+              {AXES.map((ax,i) => (
+                <div key={ax.id} style={{ display:"flex", gap:16, alignItems:"flex-start", padding:"12px 0", borderBottom: i<AXES.length-1?"1px solid #111E2A":"none" }}>
+                  <div style={{ minWidth:32, height:32, borderRadius:6, background:`${ax.color}22`, border:`1px solid ${ax.color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:900, color:ax.color }}>{ax.id}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:11, color:"#556677", marginBottom:4 }}>{ax.name.toUpperCase()} AXIS</div>
+                    <div style={{ fontSize:12, color: ax.dynamic ? (mFilled ? ax.color : "#334455") : "#8899AA", transition:"color 0.5s" }}>
+                      {ax.id==="T" && '{ ts: "2026-02-23T14:32:08Z", event_id: "SEU_0421", duration: 1.2 }'}
+                      {ax.id==="C" && '{ location: "cafe_indoor_A3", objects: ["laptop","cup","table"], motion: "seated_typing" }'}
+                      {ax.id==="I" && '{ type: "learning|focused_work", confidence: 0.87, trigger: "sigh→typing_start" }'}
+                      {ax.id==="E" && '{ state: "mild_stress", valence: -0.3, intensity: 0.4, source: ["voice","expression"] }'}
+                      {ax.id==="M" && (mFilled ? '{ trust: 0.91, policy_v: "2.1.4", tags: ["intent_confirmed"], reinforced: ["focus_session"] }' : '{ /* AAI/AsAI 처리 후 동적 기입 — 현재 비어있음 */ }')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
+
+        {/* STEP 05 */}
+        <Section label="STEP 05 · 인지 순환 루프 — PAI → AAI → AsAI → Cube">
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:0, flexWrap:"wrap", padding:"10px 0" }}>
+            {[
+              { label:"Cube", sub:"Raw + Semantic", color:"#00E5FF", icon:"🧊" }, { arrow:true },
+              { label:"PAI (L1)", sub:"의도 형성·T/C/I/E 기입", color:"#4FC3F7", icon:"🔷" }, { arrow:true },
+              { label:"AAI (L2)", sub:"구조 정렬·M-Axis 평가", color:"#76FF03", icon:"🔶" }, { arrow:true },
+              { label:"AsAI (L3)", sub:"지혜 실행·M-Axis 진화", color:"#FFD740", icon:"⭐" }, { arrow:true },
+              { label:"Cube", sub:"메모리 업데이트", color:"#00E5FF", icon:"🧊" },
+            ].map((node,i) => node.arrow
+              ? <div key={i} style={{ fontSize:20, color:"#334455", padding:"0 8px", fontWeight:700 }}>→</div>
+              : <div key={i} style={{ background:`${node.color}11`, border:`1px solid ${node.color}44`, borderRadius:10, padding:"14px 16px", textAlign:"center", minWidth:110, margin:"4px 0" }}>
+                  <div style={{ fontSize:20, marginBottom:4 }}>{node.icon}</div>
+                  <div style={{ fontSize:12, color:node.color, fontWeight:700 }}>{node.label}</div>
+                  <div style={{ fontSize:10, color:"#556677", marginTop:4, lineHeight:1.4 }}>{node.sub}</div>
+                </div>
+            )}
+          </div>
+          <div style={{ marginTop:20, background:"#080F18", border:"1px solid #1A3040", borderRadius:12, padding:"16px 24px", fontSize:12, color:"#667788", lineHeight:1.8 }}>
+            <span style={{ color:"#00E5FF", fontWeight:700 }}>핵심 원리 :</span> 의도가 PAI에서 형성 → AAI가 사회적으로 유효한 지식으로 정렬 → AsAI가 지혜 기반으로 실행 → 결과가 Cube M-Axis에 기록 →
+            <span style={{ color:"#FFD740", fontWeight:700 }}> 다음 추론의 품질이 높아지는 자기강화 순환 루프</span>.
+            기존 AI가 데이터를 처리하는 것과 달리, 벨사넷은 <span style={{ color:"#FF6D00", fontWeight:700 }}>의도 자체가 인지의 기반(substrate)이 되어 흐릅니다</span>.
+          </div>
+        </Section>
+
+        {/* Contrast */}
+        <Section label="기존 AI와의 구조적 차이">
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+            <div style={{ background:"#120808", border:"1px solid #442222", borderRadius:12, padding:"20px 22px" }}>
+              <div style={{ fontSize:12, color:"#FF4444", letterSpacing:2, marginBottom:12, fontWeight:700 }}>✕ 기존 AI (Data-Native)</div>
+              {["데이터를 벡터화하여 처리","맥락·감정·의도가 분리 또는 부재","단일 추론 루프, 메모리 연속성 없음","의도는 외부에서 프롬프트로 주입","AI가 네트워크 위에 외부 탑재"].map((t,i) => (
+                <div key={i} style={{ fontSize:12, color:"#886666", padding:"5px 0", borderBottom:"1px solid #221414", display:"flex", gap:8 }}><span style={{ color:"#553333" }}>—</span>{t}</div>
+              ))}
+            </div>
+            <div style={{ background:"#081208", border:"1px solid #224422", borderRadius:12, padding:"20px 22px" }}>
+              <div style={{ fontSize:12, color:"#76FF03", letterSpacing:2, marginBottom:12, fontWeight:700 }}>✓ 벨사넷 (Intent-Native)</div>
+              {["의도를 T·C·I·E·M 5축으로 구조화 저장","감정·맥락·의도가 인지의 기본 단위","PAI→AAI→AsAI 순환 루프, 메모리 누적","의도가 네트워크를 통해 자체 흐름","AI가 네트워크 구조 자체로 내장"].map((t,i) => (
+                <div key={i} style={{ fontSize:12, color:"#5A9966", padding:"5px 0", borderBottom:"1px solid #142214", display:"flex", gap:8 }}><span style={{ color:"#76FF03" }}>▶</span>{t}</div>
+              ))}
+            </div>
+          </div>
+        </Section>
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
