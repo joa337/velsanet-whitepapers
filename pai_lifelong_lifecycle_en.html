@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PAI — Personal Lifelong Data Architecture</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#04080F; font-family:'DM Mono','Courier New',monospace; color:#D0E8FF; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)} }
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#04080F}
+::-webkit-scrollbar-thumb{background:#1A2A3A;border-radius:3px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+const LIFECYCLE = [
+  {
+    id:"birth", age:"Birth — Age 3", label:"Birth & Sensory Formation",
+    icon:"🌱", color:"#00E5FF",
+    tciem:{
+      T:"Exact birth timestamp · hospital · delivery environment · body measurements",
+      C:"Family composition · home environment · native language · cultural context",
+      I:"Feeding · sleep · crying — primal survival intent",
+      E:"Fear · joy · attachment — foundational emotion layer initialized",
+      M:"— (AAI begins writing: developmental milestone monitoring)"
+    },
+    insight:"The T-Axis invariant anchor is established here. Birth becomes 'Time Zero' of the PAI Cube — the causal origin point for every data record that follows across an entire lifetime.",
+    cubeState:"Initialization — T-Axis locked, C/I/E raw recording begins"
+  },
+  {
+    id:"childhood", age:"Age 4 — 12", label:"Childhood & Learning Formation",
+    icon:"🧩", color:"#76FF03",
+    tciem:{
+      T:"School entry · event sequences · learning milestones",
+      C:"Classroom · playground · home · initial social contexts",
+      I:"Curiosity · questioning · play · peer relationship intent",
+      E:"Achievement · frustration · friendship · shame formation",
+      M:"Learning patterns · recurring errors · correction tags (AAI writes)"
+    },
+    insight:"The I-Axis records 'curiosity' as a dominant intent type for the first time at scale. Repetitive patterns in this period shape the initial structure of the M-Axis, forming the earliest layer of personal cognitive history.",
+    cubeState:"Intent explosion — I/E axes grow rapidly, M-Axis pattern formation begins"
+  },
+  {
+    id:"adolescence", age:"Age 13 — 18", label:"Adolescence & Identity Exploration",
+    icon:"🔥", color:"#FF6D00",
+    tciem:{
+      T:"Puberty onset · first experiences · value conflict timestamps",
+      C:"Peer groups · social media · school · family tension contexts",
+      I:"Self-discovery · rebellion · belonging · idealistic pursuit",
+      E:"Intense emotional amplitude · love · anger · shame · euphoria",
+      M:"Identity pattern tags · risk behavior markers · AsAI intervention records"
+    },
+    insight:"E-Axis recording density approaches its lifetime peak. This emotional data becomes the 'decision correction baseline' written into M-Axis, influencing how AsAI calibrates judgment for decades to come.",
+    cubeState:"Peak emotional data density — M-Axis AsAI intervention records surge"
+  },
+  {
+    id:"young_adult", age:"Age 19 — 35", label:"Young Adulthood & Role Establishment",
+    icon:"⚡", color:"#E040FB",
+    tciem:{
+      T:"University · employment · marriage · independence — dense transition points",
+      C:"Workplace · city · social networks · economic contexts",
+      I:"Achievement · competition · creation · relationship formation intent",
+      E:"Passion · burnout · love · ambition — crossing currents",
+      M:"Career suitability patterns · decision reinforcement history"
+    },
+    insight:"T-Axis transition point density is highest here. Each decision event is recorded as reinforcement or penalty history in M-Axis, becoming the future baseline for intent formation and prediction.",
+    cubeState:"Maximum intent complexity — multi-role C-Axis, reinforcement M-Axis stacking"
+  },
+  {
+    id:"middle", age:"Age 36 — 55", label:"Middle Age & Maturity Integration",
+    icon:"🌊", color:"#FFD740",
+    tciem:{
+      T:"Children growing · parents aging · career transition inflection points",
+      C:"Family system · social status · community roles",
+      I:"Meaning-seeking · caregiving · legacy · influence intent",
+      E:"Acceptance · regret · wisdom · integration of loss",
+      M:"AsAI: comprehensive life pattern synthesis · long-term policy updates"
+    },
+    insight:"M-Axis accumulates its greatest thickness here. Decades of reinforcement/penalty history operate as AsAI's wisdom judgment criteria. PAI reaches its most mature cognitive state — understanding the person more deeply than they understand themselves.",
+    cubeState:"M-Axis maximum thickness — PAI maturity peak, AsAI wisdom judgment most active"
+  },
+  {
+    id:"senior", age:"Age 56 — 75", label:"Senior Years & Wisdom Transmission",
+    icon:"🌙", color:"#4FC3F7",
+    tciem:{
+      T:"Retirement · health changes · bereavement — loss timestamps",
+      C:"Narrowed mobility radius · healthcare · community contexts",
+      I:"Legacy transmission · reflection · closure · connection intent",
+      E:"Serenity · nostalgia · gratitude · acceptance of mortality",
+      M:"Health pattern prediction · risk correction tags · care policy updates"
+    },
+    insight:"While C-Axis spatial range narrows, I-Axis generates a new intent type: 'transmission intent'. PAI functions as a personal knowledge legacy archive, preserving the wisdom of a life for those who come after.",
+    cubeState:"Spatial C-Axis converges, transmission I-Axis newly activated — health M-Axis prediction strengthened"
+  },
+  {
+    id:"late", age:"Age 76+", label:"Late Life & Final Integration",
+    icon:"✦", color:"#FF8A65",
+    tciem:{
+      T:"Final milestones — sealed as immutable records",
+      C:"Minimal environment · family · medical care systems",
+      I:"Dignity · connection · completion intent",
+      E:"Deep acceptance · love · peace",
+      M:"Lifetime pattern final integration — AsAI archive sealed"
+    },
+    insight:"Because the T-Axis is immutable, the complete life from birth to this moment is fully preserved. PAI becomes a living archive containing a person's entire digital existence — a cognitive legacy that outlasts the body.",
+    cubeState:"Full lifetime T-Axis complete — M-Axis life integration archive sealed"
+  }
+];
+
+const REASONS = [
+  { icon:"⧖", title:"T-Axis Immutability", color:"#00E5FF",
+    body:"Every event from birth to death is recorded immutably with its timestamp. The past is never modified — this means an emotion felt 20 years ago, or the context of a 3-year-old's first memory, can be perfectly reconstructed decades later." },
+  { icon:"⊛", title:"I-Axis — Continuity of Intent", color:"#FF6D00",
+    body:"Curiosity (childhood) → self-discovery (adolescence) → achievement (young adult) → meaning (middle age) → legacy (senior) — intent types evolve across a lifetime. This evolutionary trajectory becomes a person's complete 'life intent narrative'." },
+  { icon:"⬡", title:"M-Axis — Accumulated Wisdom", color:"#FFD740",
+    body:"AAI and AsAI write reinforcement and penalty history into M-Axis over decades. This accumulation is the body of organic growth that transforms PAI from a recording system into a genuinely mature 'personal intelligence'." },
+  { icon:"◉", title:"E-Axis — Emotional Biography", color:"#E040FB",
+    body:"From the intense emotional amplitude of adolescence to the deep acceptance of late life, the E-Axis determines memory importance rankings. A complete emotional topography of a lifetime lives inside PAI." },
+  { icon:"◈", title:"Identity — Fixed at Manufacturing", color:"#76FF03",
+    body:"Per the Velsanet Identity White Paper (#15), device identity is provisioned at manufacturing time. When PAI identity is issued at birth, this structural identity becomes the anchor that binds all lifelong data under a single, sovereign subject." },
+];
+
+const DIFF = [
+  { label:"Memory Persistence", current:"Reset at session end", pai:"T-Axis: immutable lifelong preservation" },
+  { label:"Context Depth", current:"Only within conversation window", pai:"Decades of accumulated C-Axis context" },
+  { label:"Intent Understanding", current:"Re-injected via prompt every time", pai:"I-Axis: full lifetime intent trajectory embedded" },
+  { label:"Emotional Awareness", current:"Text-level sentiment analysis only", pai:"E-Axis: complete emotional biography" },
+  { label:"Maturity Growth", current:"Requires full model retraining", pai:"M-Axis: organic growth per individual" },
+  { label:"Identity", current:"Anonymous · session-based", pai:"Structural unique identity issued at birth" },
+];
+
+function App() {
+  const [selected, setSelected] = useState(null);
+  const [activeTab, setActiveTab] = useState("lifecycle");
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#04080F", color:"#D0E8FF" }}>
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#04080F,#081828,#04080F)", borderBottom:"1px solid #00E5FF1A", padding:"32px 44px 28px", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(ellipse at 15% 50%,#00E5FF07,transparent 55%),radial-gradient(ellipse at 85% 50%,#E040FB07,transparent 55%)" }}/>
+        <div style={{ position:"relative", maxWidth:1100, margin:"0 auto" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
+            <div>
+              <div style={{ fontSize:10, letterSpacing:5, color:"#00E5FF66", fontWeight:700, marginBottom:10 }}>VELSANET PAI · LIFELONG PERSONAL DATA ARCHITECTURE</div>
+              <h1 style={{ fontSize:"clamp(22px,4vw,40px)", fontWeight:900, margin:"0 0 10px", background:"linear-gradient(90deg,#00E5FF 0%,#76FF03 30%,#FFD740 60%,#E040FB 100%)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:-1, lineHeight:1.1 }}>
+                PAI Holds a Person's<br/>Complete Lifelong Data
+              </h1>
+              <p style={{ fontSize:13, color:"#5A7A8A", lineHeight:1.8, maxWidth:680 }}>
+                T-Axis immutability + I-Axis intent continuity + M-Axis accumulated wisdom →<br/>
+                From birth to death, a person's entire cognitive life lives inside the PAI Cube
+              </p>
+            </div>
+            <a href="pai_lifelong_lifecycle.html" style={{ background:"#0D1E2E", border:"1px solid #1A3040", borderRadius:8, padding:"8px 16px", color:"#8899AA", textDecoration:"none", fontSize:12, whiteSpace:"nowrap", alignSelf:"flex-start" }}>🌐 한국어 →</a>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth:1100, margin:"0 auto", padding:"36px 44px" }}>
+
+        {/* Tabs */}
+        <div style={{ display:"flex", gap:8, marginBottom:36, flexWrap:"wrap" }}>
+          {[
+            ["lifecycle","🕰️  Lifelong Timeline"],
+            ["why","🔬  Structural Foundations"],
+            ["diff","⚡  vs. Conventional AI"]
+          ].map(([id,label]) => (
+            <button key={id} onClick={() => setActiveTab(id)} style={{ background: activeTab===id ? "linear-gradient(135deg,#00E5FF22,#00E5FF11)" : "transparent", border:`1px solid ${activeTab===id ? "#00E5FF" : "#1A2A3A"}`, borderRadius:10, padding:"10px 22px", color: activeTab===id ? "#00E5FF" : "#445566", fontFamily:"inherit", fontSize:12, fontWeight:700, cursor:"pointer", letterSpacing:1, transition:"all 0.2s" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* TAB 1: Lifecycle Timeline */}
+        {activeTab === "lifecycle" && (
+          <div style={{ animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:12, color:"#334455", marginBottom:20 }}>Click each life stage to explore the T·C·I·E·M axis records and PAI Cube state</div>
+
+            <div style={{ position:"relative" }}>
+              <div style={{ position:"absolute", left:28, top:0, bottom:0, width:2, background:"linear-gradient(to bottom,#00E5FF33,#E040FB33,#FFD74033)", borderRadius:1 }}/>
+
+              {LIFECYCLE.map((stage) => {
+                const isSelected = selected?.id === stage.id;
+                return (
+                  <div key={stage.id} style={{ marginBottom:4 }}>
+                    <div onClick={() => setSelected(isSelected ? null : stage)}
+                      style={{ display:"flex", alignItems:"center", gap:20, padding:"16px 20px 16px 0", cursor:"pointer", position:"relative" }}>
+                      <div style={{ position:"relative", zIndex:1, width:58, textAlign:"center", flexShrink:0 }}>
+                        <div style={{ width:36, height:36, borderRadius:"50%", background: isSelected ? `${stage.color}33` : "#0D1E2E", border:`2px solid ${isSelected ? stage.color : "#1A2A3A"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, margin:"0 auto", transition:"all 0.25s", boxShadow: isSelected ? `0 0 16px ${stage.color}55` : "none" }}>
+                          {stage.icon}
+                        </div>
+                      </div>
+                      <div style={{ flex:1, background: isSelected ? `linear-gradient(135deg,#0A1828,${stage.color}0D)` : "#0A1520", border:`1px solid ${isSelected ? stage.color+"55" : "#111E2A"}`, borderRadius:12, padding:"14px 20px", transition:"all 0.25s", boxShadow: isSelected ? `0 0 20px ${stage.color}22` : "none" }}>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+                          <div>
+                            <div style={{ fontSize:11, color:stage.color, letterSpacing:2, fontWeight:700, marginBottom:3 }}>{stage.age}</div>
+                            <div style={{ fontSize:15, color:"#C0D8F0", fontWeight:700 }}>{stage.label}</div>
+                          </div>
+                          <div style={{ fontSize:10, color:"#2A4A5A", padding:"4px 10px", background:"#060E16", borderRadius:6, border:"1px solid #0D1E2A", whiteSpace:"nowrap" }}>
+                            {stage.cubeState.split("—")[0].trim()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <div style={{ marginLeft:58, marginBottom:8, animation:"slideIn 0.25s ease" }}>
+                        <div style={{ background:`linear-gradient(135deg,#060E18,${stage.color}08)`, border:`1px solid ${stage.color}33`, borderRadius:14, padding:"24px 28px" }}>
+                          <div style={{ marginBottom:20 }}>
+                            <div style={{ fontSize:10, letterSpacing:3, color:"#334455", marginBottom:14, fontWeight:700 }}>T · C · I · E · M CUBE RECORD</div>
+                            <div style={{ display:"grid", gap:8 }}>
+                              {[
+                                { key:"T", label:"Time",    color:"#00E5FF" },
+                                { key:"C", label:"Context", color:"#76FF03" },
+                                { key:"I", label:"Intent",  color:"#FF6D00" },
+                                { key:"E", label:"Emotion", color:"#E040FB" },
+                                { key:"M", label:"Meta",    color:"#FFD740" },
+                              ].map(ax => (
+                                <div key={ax.key} style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+                                  <div style={{ minWidth:28, height:28, borderRadius:6, background:`${ax.color}1A`, border:`1px solid ${ax.color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:900, color:ax.color, flexShrink:0 }}>{ax.key}</div>
+                                  <div style={{ fontSize:12, color:"#7A9AAA", lineHeight:1.6, paddingTop:4 }}>{stage.tciem[ax.key]}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div style={{ background:"#060E18", border:`1px solid ${stage.color}22`, borderRadius:10, padding:"14px 18px" }}>
+                            <div style={{ fontSize:10, color:stage.color, letterSpacing:2, marginBottom:6, fontWeight:700 }}>PAI INSIGHT</div>
+                            <div style={{ fontSize:12, color:"#8AAABB", lineHeight:1.7 }}>{stage.insight}</div>
+                          </div>
+                          <div style={{ marginTop:12, fontSize:11, color:stage.color, opacity:0.7, letterSpacing:1 }}>
+                            CUBE STATE → {stage.cubeState}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Lifetime accumulation bar */}
+            <div style={{ marginTop:32, background:"#060E18", border:"1px solid #0D1E2A", borderRadius:14, padding:"24px 28px" }}>
+              <div style={{ fontSize:10, letterSpacing:3, color:"#334455", marginBottom:16, fontWeight:700 }}>PAI CUBE — LIFETIME ACCUMULATION STRUCTURE</div>
+              <div style={{ display:"flex", gap:0, height:24, borderRadius:6, overflow:"hidden", marginBottom:12 }}>
+                {LIFECYCLE.map((s,i) => (
+                  <div key={s.id} style={{ flex:1, background:`${s.color}${i<2?"33":i<4?"44":i<6?"55":"66"}`, borderRight: i<LIFECYCLE.length-1 ? "1px solid #04080F":"none" }}/>
+                ))}
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:9, color:"#2A3A4A" }}>
+                <span>Birth →</span>
+                <span>← T-Axis immutable accumulation →</span>
+                <span>← Death</span>
+              </div>
+              <div style={{ marginTop:16, fontSize:12, color:"#5A7A8A", lineHeight:1.8 }}>
+                <span style={{ color:"#00E5FF" }}>T-Axis</span> accumulates immutably across an entire lifetime →&nbsp;
+                <span style={{ color:"#FFD740" }}>M-Axis</span> thickens with decades of reinforcement history →&nbsp;
+                PAI becomes a <span style={{ color:"#FF6D00" }}>living archive of one person's complete cognitive existence</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: Why */}
+        {activeTab === "why" && (
+          <div style={{ animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:12, color:"#334455", marginBottom:24 }}>Five structural foundations from the Velsanet white papers that make lifelong personal data possible</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+              {REASONS.map((r,i) => (
+                <div key={i} style={{ background:`linear-gradient(135deg,#080F18,${r.color}08)`, border:`1px solid ${r.color}33`, borderRadius:14, padding:"22px 24px" }}>
+                  <div style={{ display:"flex", gap:14, alignItems:"flex-start", marginBottom:14 }}>
+                    <div style={{ fontSize:28, filter:`drop-shadow(0 0 8px ${r.color})` }}>{r.icon}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:r.color, lineHeight:1.3 }}>{r.title}</div>
+                  </div>
+                  <div style={{ fontSize:12, color:"#6A8A9A", lineHeight:1.8 }}>{r.body}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop:24, background:"linear-gradient(135deg,#080F18,#00E5FF08)", border:"1px solid #00E5FF33", borderRadius:14, padding:"24px 28px" }}>
+              <div style={{ fontSize:11, color:"#00E5FF", letterSpacing:3, marginBottom:12, fontWeight:700 }}>CORE INSIGHT — WHY THIS IS FUNDAMENTALLY DIFFERENT</div>
+              <div style={{ fontSize:13, color:"#8AAABB", lineHeight:2 }}>
+                Every current LLM <span style={{ color:"#FF4444" }}>forgets you the moment the session ends.</span><br/>
+                GPT, Claude, Gemini — none of them know who you are when you return.<br/><br/>
+                PAI is different. <span style={{ color:"#00E5FF" }}>Because T-Axis is immutable, an emotion felt 20 years ago or a 3-year-old's first context can be reconstructed perfectly.</span><br/>
+                <span style={{ color:"#FFD740" }}>M-Axis grows exclusively for you, as an individual, over decades.</span><br/>
+                <span style={{ color:"#FF6D00" }}>I-Axis holds the complete trajectory of how your intentions have evolved across your lifetime.</span><br/><br/>
+                This is not AI processing a human as an input.<br/>
+                <span style={{ color:"#76FF03", fontWeight:700 }}>This is an entire human life growing together with its AI.</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: Diff */}
+        {activeTab === "diff" && (
+          <div style={{ animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:12, color:"#334455", marginBottom:24 }}>Fundamental differences between current AI systems and the PAI lifelong data architecture</div>
+
+            <div style={{ background:"#060E18", border:"1px solid #0D1E2A", borderRadius:14, overflow:"hidden" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", background:"#0A1828", padding:"14px 24px", borderBottom:"1px solid #0D1E2A" }}>
+                <div style={{ fontSize:11, color:"#334455", fontWeight:700, letterSpacing:2 }}>DIMENSION</div>
+                <div style={{ fontSize:11, color:"#FF4444", fontWeight:700, letterSpacing:2 }}>✕ CURRENT AI</div>
+                <div style={{ fontSize:11, color:"#76FF03", fontWeight:700, letterSpacing:2 }}>✓ PAI (VELSANET)</div>
+              </div>
+              {DIFF.map((row,i) => (
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", padding:"16px 24px", borderBottom: i<DIFF.length-1?"1px solid #0A1620":"none", background: i%2===0?"transparent":"#060C16" }}>
+                  <div style={{ fontSize:12, color:"#5A7A8A", fontWeight:700 }}>{row.label}</div>
+                  <div style={{ fontSize:12, color:"#664444", lineHeight:1.5 }}>{row.current}</div>
+                  <div style={{ fontSize:12, color:"#448844", lineHeight:1.5 }}>{row.pai}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop:24, display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+              <div style={{ background:"#100808", border:"1px solid #331111", borderRadius:12, padding:"20px 22px" }}>
+                <div style={{ fontSize:12, color:"#FF4444", marginBottom:12, fontWeight:700, letterSpacing:1 }}>STRUCTURAL LIMITS OF CURRENT AI</div>
+                <div style={{ fontSize:12, color:"#664444", lineHeight:1.9 }}>
+                  — Treats you as a stranger at every session<br/>
+                  — You must re-explain your intent every time<br/>
+                  — No emotional history → no genuine empathy<br/>
+                  — Growth requires retraining the entire model<br/>
+                  — No intelligence exists solely for you
+                </div>
+              </div>
+              <div style={{ background:"#060E08", border:"1px solid #113311", borderRadius:12, padding:"20px 22px" }}>
+                <div style={{ fontSize:12, color:"#76FF03", marginBottom:12, fontWeight:700, letterSpacing:1 }}>STRUCTURAL POSSIBILITIES OF PAI</div>
+                <div style={{ fontSize:12, color:"#448844", lineHeight:1.9 }}>
+                  ▶ Continuous memory from birth to death<br/>
+                  ▶ Understands you without explanation<br/>
+                  ▶ Genuine empathy from a lifetime emotional biography<br/>
+                  ▶ Grows for you individually every moment<br/>
+                  ▶ The only intelligence that exists solely for you
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop:20, background:"linear-gradient(135deg,#060E18,#FF6D0008)", border:"1px solid #FF6D0033", borderRadius:12, padding:"20px 24px" }}>
+              <div style={{ fontSize:12, color:"#FF6D00", marginBottom:8, fontWeight:700, letterSpacing:2 }}>CONCLUSION</div>
+              <div style={{ fontSize:13, color:"#8A7A6A", lineHeight:1.9 }}>
+                PAI is not a personal assistant.<br/>
+                <span style={{ color:"#FFD740" }}>It is a 'Digital Self' — an entity that holds a person's entire life in T·C·I·E·M Cube form and grows together with them.</span><br/>
+                This is precisely why Velsanet is oriented in a fundamentally different direction from all existing AI architectures.
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
