@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Node Color System — Velsanet</title>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#020406;--surface:#050809;--border:#0A1018;--dim:#070C12;
+  --text:#C8DCF0;--muted:#1E3044;
+  --T4:#00E5FF;--C6:#607D8B;--O8:#1565C0;--D12:#2E7D32;--I20:#6A1B9A;
+  --Red:#FF1744;--Yellow:#FFD740;--Black:#111;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:44px 44px;opacity:.35;pointer-events:none;z-index:0;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(2,4,6,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 48px;display:flex;justify-content:space-between;align-items:center;}
+.nav-brand{font-family:'Big Shoulders Display',sans-serif;font-size:20px;font-weight:900;letter-spacing:4px;color:var(--text);text-decoration:none;}
+.nav-brand span{color:var(--T4);}
+.nav-back{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.nav-back:hover{color:var(--T4);}
+
+.hero{position:relative;z-index:1;padding:130px 60px 60px;max-width:1200px;margin:0 auto;}
+.hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:5px;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+.hero-eyebrow::before{content:'';width:32px;height:1px;background:var(--muted);}
+.hero-title{font-family:'Big Shoulders Display',sans-serif;font-size:clamp(48px,8vw,100px);font-weight:900;line-height:.9;letter-spacing:2px;margin-bottom:24px;text-transform:uppercase;}
+.hero-title .acc{color:var(--T4);}
+.hero-sub{font-size:14px;color:var(--muted);max-width:600px;line-height:1.85;border-left:2px solid var(--border);padding-left:18px;}
+
+/* COLOR IDENTITY GRID */
+.identity-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 60px;}
+.sec-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:5px;color:var(--muted);margin-bottom:28px;display:flex;align-items:center;gap:14px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.identity-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.identity-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .2s;}
+.identity-card:hover,.identity-card.active{border-color:var(--ic);box-shadow:0 0 24px rgba(0,0,0,.5);}
+.ic-swatch{height:80px;position:relative;display:flex;align-items:center;justify-content:center;}
+.ic-poly{font-size:32px;opacity:.9;}
+.ic-meta{padding:16px 14px;}
+.ic-formula{font-family:'Big Shoulders Display',sans-serif;font-size:20px;font-weight:900;letter-spacing:2px;margin-bottom:4px;}
+.ic-polyname{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;}
+.ic-colorname{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;margin-bottom:6px;}
+.ic-role{font-size:11px;color:var(--muted);line-height:1.6;}
+
+/* LINK SEMANTICS */
+.links-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 60px;}
+.link-demos{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.link-demo{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative;overflow:hidden;}
+.ld-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:4px;color:var(--muted);margin-bottom:16px;}
+.ld-title{font-family:'Big Shoulders Display',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;margin-bottom:12px;}
+.ld-vis{height:80px;display:flex;align-items:center;justify-content:center;gap:16px;position:relative;}
+.link-node{width:36px;height:36px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;}
+.link-line-v{width:4px;flex:1;border-radius:2px;}
+.link-line-h{height:4px;flex:1;border-radius:2px;}
+.ld-rule{font-size:11px;color:var(--muted);line-height:1.7;margin-top:12px;}
+
+/* RESERVED COLORS */
+.reserved-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 60px;}
+.reserved-row{display:flex;gap:14px;flex-wrap:wrap;}
+.reserved-chip{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;flex:1;min-width:200px;}
+.rc-dot{width:18px;height:18px;border-radius:50%;flex-shrink:0;}
+.rc-name{font-family:'Big Shoulders Display',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;}
+.rc-meaning{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:2px;}
+.rc-rule{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5;}
+
+/* CONSTITUTION BLOCK */
+.const-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 80px;}
+.const-block{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px 40px;position:relative;overflow:hidden;border-top:2px solid var(--T4);}
+.const-block::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(0,229,255,.03),transparent 60%);}
+.const-title{font-family:'Big Shoulders Display',sans-serif;font-size:22px;font-weight:900;letter-spacing:3px;color:var(--T4);margin-bottom:16px;position:relative;}
+.const-rules{display:flex;flex-direction:column;gap:12px;position:relative;}
+.const-rule{display:flex;gap:14px;font-size:13px;color:var(--muted);line-height:1.7;}
+.const-rule::before{content:'§';color:var(--T4);font-family:'Big Shoulders Display',sans-serif;font-size:16px;font-weight:700;flex-shrink:0;}
+
+.page-footer{position:relative;z-index:1;border-top:1px solid var(--border);max-width:1200px;margin:0 auto;padding:32px 60px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
+.footer-left{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);}
+.footer-links{display:flex;gap:20px;}
+.footer-link{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.footer-link:hover{color:var(--T4);}
+
+@media(max-width:768px){
+  .hero,.identity-section,.links-section,.reserved-section,.const-section{padding-left:24px;padding-right:24px;}
+  .identity-grid{grid-template-columns:repeat(2,1fr);}
+  .link-demos{grid-template-columns:1fr;}
+  .page-footer{padding:24px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">VELSA<span>NET</span></a>
+  <a href="index.html" class="nav-back">← BACK TO HOME</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">WHITE PAPER #13 · NODE COLOR SYSTEM · ARCHITECTURAL CONSTITUTION</div>
+  <h1 class="hero-title"><span class="acc">COLOR</span><br/>IS LAW</h1>
+  <p class="hero-sub">
+    In Velsanet, color is not cosmetic — it is structural law.<br/><br/>
+    Each polyhedral class is permanently assigned a color family. Color locks the node's architectural role and AI authority level. Hue overlap is prohibited. Violation constitutes structural non-compliance. This is the Node Color Constitution.
+  </p>
+</section>
+
+<!-- IDENTITY GRID -->
+<section class="identity-section">
+  <div class="sec-label">NODE COLOR IDENTITY — CLICK TO EXPLORE</div>
+  <div class="identity-grid" id="identityGrid"></div>
+</section>
+
+<!-- LINK SEMANTICS -->
+<section class="links-section">
+  <div class="sec-label">LINK COLOR SEMANTICS</div>
+  <div class="link-demos">
+    <div class="link-demo" style="border-top:2px solid #1E88E5">
+      <div class="ld-label">VERTICAL LINK</div>
+      <div class="ld-title" style="color:#1E88E5">AUTHORITY TRANSFER</div>
+      <div class="ld-vis">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div class="link-node" style="border-color:#1E88E5;color:#1E88E5">O₈</div>
+          <div style="width:4px;height:40px;background:linear-gradient(to top,#1E88E5,#43A047);border-radius:2px;"></div>
+          <div class="link-node" style="border-color:#43A047;color:#43A047">D₁₂</div>
+        </div>
+      </div>
+      <div class="ld-rule">Vertical links represent abstraction increase, responsibility delegation, and authority transfer.<br/><br/>
+      <strong style="color:#1E88E5">Rule:</strong> One-directional gradient — lower-layer color → higher-layer color. Reverse gradients are structurally prohibited.</div>
+    </div>
+    <div class="link-demo" style="border-top:2px solid #43A047">
+      <div class="ld-label">HORIZONTAL LINK</div>
+      <div class="ld-title" style="color:#43A047">COOPERATION</div>
+      <div class="ld-vis">
+        <div class="link-node" style="border-color:#43A047;color:#43A047">D₁₂</div>
+        <div style="height:4px;width:60px;background:#43A047;border-radius:2px;opacity:.7;"></div>
+        <div class="link-node" style="border-color:#43A047;color:#43A047">D₁₂</div>
+      </div>
+      <div class="ld-rule">Horizontal links indicate equal hierarchy, cooperative behavior, and parallel expansion.<br/><br/>
+      <strong style="color:#43A047">Rule:</strong> Same color family, differ only in luminance or saturation. Any hue change constitutes a structural violation.</div>
+    </div>
+    <div class="link-demo" style="border-top:2px solid #00E5FF">
+      <div class="ld-label">PARALLEL E2E PATH</div>
+      <div class="ld-title" style="color:#00E5FF">STRUCTURAL PRIMITIVE</div>
+      <div class="ld-vis" style="flex-direction:column;gap:6px">
+        <div style="height:3px;width:100%;background:#1E88E5;border-radius:2px;opacity:.9;"></div>
+        <div style="height:4px;width:100%;background:#1E88E5;border-radius:2px;opacity:.7;"></div>
+        <div style="height:5px;width:100%;background:#1E88E5;border-radius:2px;opacity:.5;"></div>
+      </div>
+      <div class="ld-rule">Parallel E2E paths are structural primitives — not logical constructs.<br/><br/>
+      <strong style="color:#00E5FF">Rule:</strong> Same color family, increased line thickness, increased luminance. Color substitution is prohibited.</div>
+    </div>
+  </div>
+</section>
+
+<!-- RESERVED COLORS -->
+<section class="reserved-section">
+  <div class="sec-label">GLOBALLY RESERVED COLORS — MUST NOT APPEAR IN NORMAL STRUCTURES</div>
+  <div class="reserved-row">
+    <div class="reserved-chip" style="border-color:#FF1744">
+      <div class="rc-dot" style="background:#FF1744;box-shadow:0 0 10px #FF1744"></div>
+      <div>
+        <div class="rc-name" style="color:#FF1744">RED</div>
+        <div class="rc-meaning">FAULT · VIOLATION · STRUCTURAL BREACH</div>
+        <div class="rc-rule">Any appearance of Red in the network indicates a structural fault or policy violation. Never use in normal operations.</div>
+      </div>
+    </div>
+    <div class="reserved-chip" style="border-color:#FFD740">
+      <div class="rc-dot" style="background:#FFD740;box-shadow:0 0 10px #FFD740"></div>
+      <div>
+        <div class="rc-name" style="color:#FFD740">YELLOW</div>
+        <div class="rc-meaning">WARNING · INSTABILITY · DEGRADED STATE</div>
+        <div class="rc-rule">Yellow signals warning conditions and structural instability. Reserved for degraded path states and constraint warnings.</div>
+      </div>
+    </div>
+    <div class="reserved-chip" style="border-color:#444">
+      <div class="rc-dot" style="background:#1A1A1A;border:1px solid #444;box-shadow:0 0 10px rgba(0,0,0,.5)"></div>
+      <div>
+        <div class="rc-name" style="color:#888">BLACK</div>
+        <div class="rc-meaning">ISOLATION · NON-VISIBLE DOMAIN</div>
+        <div class="rc-rule">Black indicates structural isolation or domains that are intentionally non-visible. Never used for active nodes.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONSTITUTION -->
+<section class="const-section">
+  <div class="const-block">
+    <div class="const-title">THE COLOR CONSTITUTION</div>
+    <div class="const-rules">
+      <div class="const-rule">Each polyhedral class owns a unique color family. Representative color is a fixed anchor. No deviation permitted.</div>
+      <div class="const-rule">Hue overlap between polyhedral classes is structurally prohibited. All derived colors must be computable from the anchor.</div>
+      <div class="const-rule">Vertical links must be rendered as a one-directional gradient from lower-layer color to higher-layer color. Reverse gradients imply false authority inversion and are prohibited.</div>
+      <div class="const-rule">Horizontal links retain the same color family as connected nodes. They differ only in luminance or saturation. Any hue change is a structural violation.</div>
+      <div class="const-rule">Red, Yellow, and Black are globally reserved. They must not appear in normal vertical or horizontal structures under any circumstances.</div>
+      <div class="const-rule">While the color logic and structural semantics defined in this document are immutable, the perceptual realization of color remains intentionally open for refinement — subject to Color Master review, within constitutional constraints.</div>
+    </div>
+  </div>
+</section>
+
+<footer class="page-footer">
+  <div class="footer-left">VELSANET · WHITE PAPER #13 · NODE COLOR SYSTEM</div>
+  <div class="footer-links">
+    <a href="index.html" class="footer-link">HOME</a>
+    <a href="polyhedra.html" class="footer-link">POLYHEDRA</a>
+    <a href="governance.html" class="footer-link">GOVERNANCE</a>
+    <a href="whitepapers/WP13_Node_Color/Velsanet%20Node%20Color%20White%20Paper%20%2313(v1.0_20251226).pdf" class="footer-link" target="_blank">↓ WP13 PDF</a>
+  </div>
+</footer>
+
+<script>
+const nodes = [
+  {formula:'T₄',name:'Tetrahedron',color:'#00E5FF',colorName:'Deep Cyan',icon:'△',
+   role:'Personal / Minimal Access',meaning:'Origin · agency · access emergence',
+   rule:'PAI seed node. All network space originates here. Identity provisioned at manufacturing time.'},
+  {formula:'C₆',name:'Hexahedron',color:'#607D8B',colorName:'Graphite Gray',icon:'⬜',
+   role:'Physical / RAN Mapping',meaning:'Stability · anchoring · channel alignment',
+   rule:'No AI layer assigned. Physical infrastructure only. Wired-wireless convergence node.'},
+  {formula:'O₈',name:'Octahedron',color:'#1565C0',colorName:'Deep Azure Blue',icon:'◈',
+   role:'Access / City Layer / PAI',meaning:'Flow · aggregation · local E2E domain',
+   rule:'Hosts Personal AI (PAI). Cube memory (384 lanes). DIKWEI Data→Information stage.'},
+  {formula:'D₁₂',name:'Dodecahedron',color:'#2E7D32',colorName:'Emerald Green',icon:'⬟',
+   role:'Agent AI (AAI)',meaning:'Coordination · structural alignment',
+   rule:'Hosts Agent AI (AAI). Regional sovereign coordinator. DIKWEI Information→Knowledge.'},
+  {formula:'I₂₀',name:'Icosahedron',color:'#6A1B9A',colorName:'Deep Violet',icon:'✦',
+   role:'Assistant / Sovereign AI (AsAI)',meaning:'Judgment · global governance',
+   rule:'Hosts AsAI. Maximum power = minimum freedom. DIKWEI Knowledge→Wisdom→Execution.'},
+];
+
+let activeCard = 0;
+
+function renderGrid() {
+  document.getElementById('identityGrid').innerHTML = nodes.map((n,i)=>`
+    <div class="identity-card ${i===activeCard?'active':''}" style="--ic:${n.color}" onclick="selectCard(${i})">
+      <div class="ic-swatch" style="background:${n.color}18">
+        <div class="ic-poly" style="color:${n.color}">${n.icon}</div>
+      </div>
+      <div class="ic-meta">
+        <div class="ic-formula" style="color:${n.color}">${n.formula}</div>
+        <div class="ic-polyname">${n.name.toUpperCase()}</div>
+        <div class="ic-colorname" style="color:${n.color}">● ${n.colorName}</div>
+        <div class="ic-role">${n.role}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectCard(i) { activeCard = i; renderGrid(); }
+renderGrid();
+</script>
+</body>
+</html>
