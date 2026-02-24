@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Velsanet — Architecture White Papers</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#030608;--surface:#080D12;--border:#0E1A24;--border-bright:#162433;
+  --text:#C8DCE8;--muted:#3A5060;--dim:#1A2C3A;
+  --c01:#00E5FF;--c02:#29B6F6;--c03:#4FC3F7;--c04:#81D4FA;--c05:#00FF87;
+  --c06:#00E5FF;--c07:#76FF03;--c08:#CCFF33;--c09:#FFD740;--c10:#FFAB40;
+  --c11:#FF6D00;--c12:#FF4444;--c13:#E040FB;--c14:#CE93D8;--c15:#B39DDB;
+  --c16:#80DEEA;--c17:#4DD0E1;--c18:#26C6DA;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;line-height:1.6;overflow-x:hidden;}
+.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:80px 60px 100px;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 10% 40%,#00E5FF08 0%,transparent 60%),radial-gradient(ellipse 50% 60% at 90% 60%,#FF6D0006 0%,transparent 60%);z-index:0;}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.4;z-index:0;animation:gridShift 20s linear infinite;}
+@keyframes gridShift{from{background-position:0 0}to{background-position:60px 60px}}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.eyebrow{font-size:10px;letter-spacing:6px;color:var(--muted);font-weight:700;margin-bottom:28px;display:flex;align-items:center;gap:16px;}
+.eyebrow::before{content:'';display:block;width:40px;height:1px;background:var(--muted);}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(44px,8vw,96px);font-weight:900;line-height:.95;letter-spacing:-3px;margin-bottom:32px;}
+.line1{color:var(--text);}
+.grad{background:linear-gradient(90deg,#00E5FF,#76FF03,#FFD740,#FF6D00,#E040FB);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gflow 6s linear infinite;}
+@keyframes gflow{from{background-position:0% center}to{background-position:200% center}}
+.hero-tagline{font-size:13px;color:var(--muted);max-width:580px;line-height:1.9;margin-bottom:48px;border-left:2px solid var(--border-bright);padding-left:20px;}
+.hero-tagline strong{color:#00E5FF88;font-weight:400;}
+.hero-stats{display:flex;gap:40px;flex-wrap:wrap;}
+.stat-num{font-family:'Syne',sans-serif;font-size:38px;font-weight:900;color:var(--text);line-height:1;}
+.stat-num span{color:#00E5FF;}
+.stat-label{font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:4px;}
+.hero-scroll{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:9px;letter-spacing:3px;z-index:1;animation:bob 2s ease-in-out infinite;}
+.hero-scroll::after{content:'';display:block;width:1px;height:38px;background:linear-gradient(to bottom,var(--muted),transparent);}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+.section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:80px 60px;}
+.section-header{display:flex;align-items:baseline;gap:16px;margin-bottom:44px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.sec-num{font-size:10px;letter-spacing:4px;color:var(--muted);font-weight:700;}
+.sec-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;color:var(--text);text-transform:uppercase;}
+.divider{border:none;border-top:1px solid var(--border);margin:0 60px;}
+.arch-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:56px;}
+.arch-col{background:var(--surface);padding:22px 16px;text-align:center;transition:background .2s;}
+.arch-col:hover{background:var(--dim);}
+.arch-icon{font-size:26px;margin-bottom:8px;}
+.arch-col-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.arch-col-sub{font-size:9px;color:var(--muted);line-height:1.6;}
+.wp-group{margin-bottom:52px;}
+.wp-group-label{font-size:9px;letter-spacing:5px;color:var(--muted);font-weight:700;margin-bottom:16px;text-transform:uppercase;display:flex;align-items:center;gap:12px;}
+.wp-group-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.wp-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 22px;transition:all .2s ease;overflow:hidden;display:block;text-decoration:none;}
+.wp-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cc,#00E5FF);opacity:.65;}
+.wp-card:hover{border-color:var(--cc,#00E5FF);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,229,255,.08);}
+.wp-card:hover .wp-num{color:var(--cc,#00E5FF);}
+.pdf-badge{position:absolute;top:12px;right:14px;font-size:8px;letter-spacing:2px;font-weight:700;padding:3px 7px;border-radius:3px;background:rgba(0,229,255,.1);color:var(--cc,#00E5FF);border:1px solid rgba(0,229,255,.25);opacity:.75;transition:opacity .2s;}
+.wp-card:hover .pdf-badge{opacity:1;}
+.wp-num{font-size:10px;font-weight:700;letter-spacing:3px;color:var(--muted);margin-bottom:7px;transition:color .2s;}
+.wp-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.3;}
+.wp-subtitle{font-size:10px;color:var(--cc,#00E5FF);opacity:.7;margin-bottom:9px;}
+.wp-desc{font-size:11px;color:var(--muted);line-height:1.75;}
+.wp-tag{display:inline-block;margin-top:11px;font-size:8px;letter-spacing:2px;padding:3px 8px;border-radius:3px;background:rgba(0,229,255,.08);color:var(--cc,#00E5FF);border:1px solid rgba(0,229,255,.2);}
+.pages-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.page-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px 52px 26px 26px;text-decoration:none;display:flex;flex-direction:column;gap:9px;transition:all .25s;position:relative;}
+.page-card::after{content:'→';position:absolute;right:26px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--muted);transition:all .2s;}
+.page-card:hover::after{right:20px;color:var(--pc,#00E5FF);}
+.page-card:hover{border-color:var(--pc,#00E5FF);box-shadow:0 0 36px rgba(0,229,255,.06);}
+.page-badge{font-size:9px;letter-spacing:3px;color:var(--pc,#00E5FF);font-weight:700;}
+.page-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--text);line-height:1.2;}
+.page-desc{font-size:11px;color:var(--muted);line-height:1.7;}
+.page-flag{font-size:18px;}
+.comp-block{background:linear-gradient(135deg,var(--surface),#0A1520);border:1px solid var(--border-bright);border-radius:16px;padding:48px 52px;display:flex;align-items:center;justify-content:space-between;gap:32px;flex-wrap:wrap;position:relative;overflow:hidden;}
+.comp-block::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 80% at 100% 50%,rgba(0,229,255,.04),transparent 60%);}
+.comp-eyebrow{font-size:9px;letter-spacing:4px;color:var(--muted);margin-bottom:10px;font-weight:700;}
+.comp-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:900;color:var(--text);margin-bottom:8px;line-height:1.2;}
+.comp-sub{font-size:12px;color:var(--muted);line-height:1.75;max-width:480px;}
+.btn-dl{display:inline-flex;align-items:center;gap:10px;background:#00E5FF;color:#000;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;padding:14px 28px;border-radius:8px;text-decoration:none;transition:all .2s;white-space:nowrap;flex-shrink:0;position:relative;}
+.btn-dl:hover{background:#fff;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,255,.25);}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:36px 60px;max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.footer-brand{font-family:'Syne',sans-serif;font-size:14px;font-weight:900;color:var(--text);letter-spacing:2px;}
+.footer-links{display:flex;gap:22px;flex-wrap:wrap;}
+.footer-link{font-size:10px;letter-spacing:2px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.footer-link:hover{color:#00E5FF;}
+.footer-copy{font-size:10px;color:var(--dim);letter-spacing:1px;}
+/* CONTACT SECTION */
+.contact-block{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;}
+.contact-eyebrow{font-size:9px;letter-spacing:5px;color:var(--muted);font-weight:700;margin-bottom:14px;}
+.contact-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;color:var(--text);line-height:1.15;margin-bottom:16px;}
+.contact-desc{font-size:12px;color:var(--muted);line-height:1.85;margin-bottom:28px;}
+.contact-items{display:flex;flex-direction:column;gap:10px;}
+.contact-item{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);letter-spacing:.5px;}
+.ci-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.form-card{background:var(--surface);border:1px solid var(--border-bright);border-radius:14px;padding:36px 32px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;}
+.form-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,229,255,.04),transparent 60%);}
+.form-card-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);position:relative;}
+.form-card-sub{font-size:11px;color:var(--muted);line-height:1.7;position:relative;}
+.btn-form{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#00E5FF,#00B8CC);color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;padding:16px 22px;border-radius:10px;text-decoration:none;transition:all .2s;position:relative;letter-spacing:.5px;}
+.btn-arrow{font-size:20px;transition:transform .2s;}
+.btn-form:hover{background:linear-gradient(135deg,#fff,#00E5FF);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,229,255,.3);}
+.btn-form:hover .btn-arrow{transform:translate(3px,-3px);}
+.form-note{font-size:9px;color:var(--muted);letter-spacing:1px;line-height:1.6;position:relative;opacity:.7;}
+
+@media(max-width:768px){
+  .hero,.section{padding:60px 24px;}
+  .hero-title{letter-spacing:-1px;}
+  .arch-strip{grid-template-columns:repeat(2,1fr);}
+  .pages-grid,.wp-grid{grid-template-columns:1fr;}
+  .comp-block{padding:28px 24px;}
+  .contact-block{grid-template-columns:1fr;}
+  footer{padding:28px 24px;}
+  .divider{margin:0 24px;}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="eyebrow">VELSANET ARCHITECTURE · 2026 · 19 WHITE PAPERS</div>
+    <h1 class="hero-title">
+      <div class="line1">Topology-First.</div>
+      <div class="grad">Intent-Native.</div>
+      <div class="line1">Physically Real.</div>
+    </h1>
+    <p class="hero-tagline">
+      Velsanet is not an extension of the Internet.<br/>
+      It is a <strong>new architectural foundation</strong> — where topology precedes addressing,
+      intelligence is embedded in the structure itself,
+      and physical optical cores replace packet routing entirely.<br/><br/>
+      19 white papers. One complete architecture.
+    </p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num"><span>19</span></div><div class="stat-label">WHITE PAPERS</div></div>
+      <div class="stat"><div class="stat-num"><span>5</span></div><div class="stat-label">POLYHEDRAL LAYERS</div></div>
+      <div class="stat"><div class="stat-num"><span>3</span></div><div class="stat-label">AI LAYERS</div></div>
+      <div class="stat"><div class="stat-num"><span>0</span></div><div class="stat-label">PACKET SWITCHING</div></div>
+    </div>
+  </div>
+  <div class="hero-scroll">SCROLL</div>
+</section>
+
+<hr class="divider"/>
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">00</span>
+    <span class="sec-title">Architecture at a Glance</span>
+  </div>
+  <div class="arch-strip">
+    <div class="arch-col"><div class="arch-icon">⬡</div><div class="arch-col-title">Physical Layer</div><div class="arch-col-sub">Polyhedral nodes · MOCT · Parallel optical cores · Zero packet switching</div></div>
+    <div class="arch-col"><div class="arch-icon">◈</div><div class="arch-col-title">Spatial Layer</div><div class="arch-col-sub">Topology-first · Pre-coordinate space · Digital DNA · Path formation</div></div>
+    <div class="arch-col"><div class="arch-icon">⊛</div><div class="arch-col-title">AI Layer</div><div class="arch-col-sub">PAI · AAI · AsAI · Cube memory · DIKWEI cycle · Lifelong data</div></div>
+    <div class="arch-col"><div class="arch-icon">◉</div><div class="arch-col-title">Identity Layer</div><div class="arch-col-sub">Manufacturing-time identity · Path authority · Structural trust</div></div>
+    <div class="arch-col"><div class="arch-icon">⧖</div><div class="arch-col-title">Governance Layer</div><div class="arch-col-sub">Q2–Q7 hierarchy · IVGF · Sovereign projection · City E2E</div></div>
+  </div>
+
+  <!-- GROUP 1 -->
+  <div class="wp-group">
+    <div class="wp-group-label">NETWORK FOUNDATION — #01 · #02 · #03 · #04 · #05</div>
+    <div class="wp-grid">
+      <a class="wp-card" style="--cc:var(--c01)" href="whitepapers/WP01_Network/Velsanet%20Network%20White%20Paper%20%2301(v2.0_251018).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 01</div>
+        <div class="wp-title">Velsanet Network White Paper</div>
+        <div class="wp-subtitle">Network Architecture Overview</div>
+        <div class="wp-desc">The founding manifesto. A 3D polyhedral distributed network where intelligence flows as intent, not data. Five polyhedra (T₄ C₆ O₈ D₁₂ I₂₀) form the complete grammar of network space.</div>
+        <span class="wp-tag">VISION · TOPOLOGY</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c02)" href="whitepapers/WP02_Wired_Wireless_Convergence/Velsanet%20Wired%20Wireless%20Convergence%20White%20Paper%20%2302(v1.0_20251208).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 02</div>
+        <div class="wp-title">Wired–Wireless Convergence</div>
+        <div class="wp-subtitle">Wireless as Optical Entry Point</div>
+        <div class="wp-desc">Wireless is not a network — it is an entry point. Every device maps to one optical core (8 channels). V-MCU manages handover through overlapped E2E. No re-routing, no packet loss on mobility.</div>
+        <span class="wp-tag">WIRELESS · E2E</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c03)" href="whitepapers/WP03_Multi_Optical_Core_Transceiver/Velsanet%20Multi-Optical-Core%20Transceiver%20(MOCT)%20White%20Paper%20%2303(v1.1_20251207).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 03</div>
+        <div class="wp-title">Multi-Optical-Core Transceiver</div>
+        <div class="wp-subtitle">MOCT — Fixed Photonic Substrate</div>
+        <div class="wp-desc">Packet switching abandoned entirely. Fixed, non-pluggable photonic module: 100–1,000+ parallel cores, MEMS alignment, pre-attached 5m+ fibers. The physical hardware heart of Velsanet.</div>
+        <span class="wp-tag">HARDWARE · OPTICAL</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c04)" href="whitepapers/WP04_Matrix/Velsanet%20Matrix%20White%20Paper%20%2304(v1.1_20251208).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 04</div>
+        <div class="wp-title">Matrix Architecture</div>
+        <div class="wp-subtitle">8-Layer Optical Switching Fabric</div>
+        <div class="wp-desc">Semiconductor-inspired crossbar matrix. 8 physically isolated optical layers per face-pair. E2E path = physical activation, not routing. Parallel E2E max = 8 × N(N−1)/2. Zero queuing. Zero arbitration.</div>
+        <span class="wp-tag">MATRIX · PARALLELISM</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c05)" href="whitepapers/WP05_Spatial_Genesis/Velsanet%20Spatial%20Genesis%20White%20Paper%20%2305(v1.0_20251221).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 05</div>
+        <div class="wp-title">Spatial Genesis</div>
+        <div class="wp-subtitle">Digital DNA of Polyhedral Networks</div>
+        <div class="wp-desc">The origin paper of the entire ecosystem. Topology exists before addressing. Rule Engine → Instance Generator → State Validator. All 17 subsequent white papers derive from this document.</div>
+        <span class="wp-tag">FOUNDATION · TOPOLOGY-FIRST</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- GROUP 2 -->
+  <div class="wp-group">
+    <div class="wp-group-label">COGNITIVE ARCHITECTURE — #06 · #07 · #08 · #09 · #10</div>
+    <div class="wp-grid">
+      <a class="wp-card" style="--cc:var(--c06)" href="whitepapers/WP06_Multimodal_Cube_Architecture/Velsanet%20Multimodal%20Cube%20Architecture%20White%20Paper%20%2306(v1.0_20251209).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 06</div>
+        <div class="wp-title">Multimodal Cube Architecture</div>
+        <div class="wp-subtitle">T · C · I · E · M Semantic Memory</div>
+        <div class="wp-desc">Two-tier memory: Raw (immutable) + Cube (semantic). Five axes — Time, Context, Intent, Emotion, Meta. SEU = 0.8–1.5s event windows. The basis for PAI holding personal data from birth to death.</div>
+        <span class="wp-tag">MEMORY · INTENT · PAI</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c07)" href="whitepapers/WP07_Mathematical/Velsanet%20Mathematical%20White%20Paper%20%2307(v1.1_20251227).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 07</div>
+        <div class="wp-title">Mathematical White Paper</div>
+        <div class="wp-subtitle">Structural Framework — Graph Theory</div>
+        <div class="wp-desc">Formal proof: conventional networks are optimization problems; Velsanet is a structural problem. Multi-layer graph theory. Q7 hypercube. Contraction condition λ&lt;1. Path independence ⊔. Local verifiability.</div>
+        <span class="wp-tag">MATHEMATICS · PROOF</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c08)" href="whitepapers/WP08_AI/Velsanet%20AI%20WhitePaper%20%2308(v1.3_20251229).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 08</div>
+        <div class="wp-title">AI White Paper</div>
+        <div class="wp-subtitle">DIKWEI Cognitive Cycle</div>
+        <div class="wp-desc">Data → Information → Knowledge → Wisdom → Execution → Intent. PAI forms intent natively. AAI mediates structurally. AsAI executes through wisdom. The complete cognitive lifecycle of a Velsanet node.</div>
+        <span class="wp-tag">DIKWEI · COGNITIVE CYCLE</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c09)" href="whitepapers/WP09_Three_Layer_AI/Velsanet%20Three-Layer%20AI%20System%20White%20Paper%20%2309(v1.0_20251213).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 09</div>
+        <div class="wp-title">Three-Layer AI System</div>
+        <div class="wp-subtitle">PAI · AAI · AsAI Architecture</div>
+        <div class="wp-desc">Not a hierarchy of intelligence — a structure of responsibility. PAI: intent ownership. AAI: judgment mediation. AsAI: execution with accountability. The most powerful layer is the least free. A structural safety mechanism.</div>
+        <span class="wp-tag">PAI · AAI · AsAI</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c10)" href="whitepapers/WP10_Network_AI/Velsanet%20Network%20AI%20White%20Paper%20%2310(v1.3_20251222).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 10</div>
+        <div class="wp-title">Network AI White Paper</div>
+        <div class="wp-subtitle">Distributed Cognitive Infrastructure</div>
+        <div class="wp-desc">How PAI, AAI, and AsAI operate at network scale. Regional PAI integration. AAI cognitive convergence pathways. Dedicated Equipment as synaptic transformer. Closed-loop cognitive cycle across the entire Velsanet mesh.</div>
+        <span class="wp-tag">NETWORK AI · DISTRIBUTED</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- GROUP 3 -->
+  <div class="wp-group">
+    <div class="wp-group-label">STRUCTURAL FOUNDATIONS — #11 · #12 · #13</div>
+    <div class="wp-grid">
+      <a class="wp-card" style="--cc:var(--c11)" href="whitepapers/WP11_IVGF_Conceptual_Existence/IVGF%20Conceptual%20Existence%20White%20Paper%20%2311(v1.0_20251213).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 11</div>
+        <div class="wp-title">IVGF Conceptual Existence</div>
+        <div class="wp-subtitle">International Velsanet Governance Framework</div>
+        <div class="wp-desc">Why a global governance layer must structurally exist. Without IVGF: a powerful system. With IVGF: a governable civilization-scale system. Not above nation-states — between them. Exists by topological necessity, not politics.</div>
+        <span class="wp-tag">GOVERNANCE · SOVEREIGNTY</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c12)" href="whitepapers/WP12_Foundation/Velsanet%20Foundation%20White%20Paper%20%2312(v1.1_20251229).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 12</div>
+        <div class="wp-title">Foundation White Paper</div>
+        <div class="wp-subtitle">Structural Critique of the Internet</div>
+        <div class="wp-desc">Why the Internet's failures are architectural, not algorithmic. Concepts accumulated faster than structure was reconsidered. The historical case — told through the Internet's own evolution — for why Velsanet must exist.</div>
+        <span class="wp-tag">CRITIQUE · HISTORY</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c13)" href="whitepapers/WP13_Node_Color/Velsanet%20Node%20Color%20White%20Paper%20%2313(v1.0_20251226).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 13</div>
+        <div class="wp-title">Node Color White Paper</div>
+        <div class="wp-subtitle">Architectural Constitution — Color Freezing</div>
+        <div class="wp-desc">Architecture frozen into identity. Color becomes structural law — not descriptive, but prescriptive. Cyan=O₈/PAI · Green=D₁₂/AAI · Violet=I₂₀/AsAI · Amber=Access · Red=Fault. Highest authority. Non-derivable.</div>
+        <span class="wp-tag">IDENTITY · COLOR LAW</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- GROUP 4 -->
+  <div class="wp-group">
+    <div class="wp-group-label">OPERATIONAL SYSTEMS — #14 · #15 · #16 · #17 · #18 · #19</div>
+    <div class="wp-grid">
+      <a class="wp-card" style="--cc:var(--c14)" href="whitepapers/WP14_City_E2E_Management_Center/Velsanet%20City%20E2E%20Management%20Center%20White%20Paper%20%2314(v1.0_20251231).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 14</div>
+        <div class="wp-title">City-level E2E Management Center</div>
+        <div class="wp-subtitle">Urban Infrastructure Architecture</div>
+        <div class="wp-desc">7 structural public safety channels (Disaster Alert · Fire · Medical · Security · Traffic · Utility · Emergency Broadcast) as permanent public infrastructure. PAI sovereignty preserved. City governance fully independent of ISPs.</div>
+        <span class="wp-tag">CITY · PUBLIC SAFETY</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c15)" href="whitepapers/WP15_Identity/Velsanet%20Identity%20White%20Paper%20%2315(v1.0_20260107).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 15</div>
+        <div class="wp-title">Identity White Paper</div>
+        <div class="wp-subtitle">Network-Native Identity &amp; Path Authority</div>
+        <div class="wp-desc">Identity provisioned at manufacturing time. Not a locator or session ID — a structural constraint set. Region Code + Hierarchy Level + Device Role + Path Constraints. Trust is structural, not procedural.</div>
+        <span class="wp-tag">IDENTITY · TRUST</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c16)" href="whitepapers/WP16_Path_Formation/Velsanet%20Path%20Formation%20White%20Paper%20%2316(v1.0_20260107).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 16</div>
+        <div class="wp-title">Path Formation White Paper</div>
+        <div class="wp-subtitle">Structural Path Emergence</div>
+        <div class="wp-desc">Paths do not route — they form through structural matching. Identity attributes submitted, network evaluates admissibility, path emerges from structural consistency. Connection is not granted; it is a structural consequence.</div>
+        <span class="wp-tag">PATH · FORMATION</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c17)" href="whitepapers/WP17_Path_Lifecycle/Velsanet%20Path%20Lifecycle%20White%20Paper%20%2317(v1.0_202610107).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 17</div>
+        <div class="wp-title">Path Lifecycle White Paper</div>
+        <div class="wp-subtitle">Continuity, Mobility &amp; State Transition</div>
+        <div class="wp-desc">Paths persist as identity-bound stateful entities. Mobility = state transition, not re-formation. Make-before-break handover. Full lifecycle record retained for every terminated path. Network holds exclusive lifecycle control.</div>
+        <span class="wp-tag">LIFECYCLE · MOBILITY</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c18)" href="whitepapers/WP18_AI_Global_Governance/Velsanet%20Network%20AI%20and%20Global%20Governance%20Architecture%20White%20Paper%20%2318(v1.0_20260108).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 18</div>
+        <div class="wp-title">Network AI &amp; Global Governance</div>
+        <div class="wp-subtitle">Projection-Based Sovereign Architecture</div>
+        <div class="wp-desc">Higher layers project structural states — they never issue commands. Q7 (execution) → Q6 (regional) → Q4 (national sovereign) → Q3 (continental AI) → Q2 (global VELSA). Governance through verification, not control.</div>
+        <span class="wp-tag">GOVERNANCE · GLOBAL · Q2–Q7</span>
+      </a>
+      <a class="wp-card" style="--cc:var(--c01)" href="whitepapers/WP19_Cognition_Cube_System/Velsanet%20Cognition%20Cube%20System%20White%20Paper%20%2319(v1.0_260224).pdf" target="_blank">
+        <span class="pdf-badge">↓ PDF</span>
+        <div class="wp-num"># 19</div>
+        <div class="wp-title">Cognition Cube System</div>
+        <div class="wp-subtitle">AI-Native 6G Cognitive Framework</div>
+        <div class="wp-desc">A revolutionary AI-Native framework designed for 6G networks. Real-world signals transform into cognitive units via the Cognition Cube System — optimizing multi-channel communication and cognitive data processing for intelligent networks of the future.</div>
+        <span class="wp-tag">COGNITION · AI-NATIVE · 6G</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">01</span>
+    <span class="sec-title">Interactive Visualizations</span>
+  </div>
+  <div class="pages-grid">
+    <a href="polyhedra.html" class="page-card" style="--pc:var(--c05)">
+      <div class="page-flag">⬟</div>
+      <div class="page-badge">WHITE PAPER #01 · #05 · ENGLISH</div>
+      <div class="page-title">Polyhedral Topology<br/>Explorer</div>
+      <div class="page-desc">Click each of the 5 polyhedra — T₄ C₆ O₈ D₁₂ I₂₀ — to explore structural role, E2E path count, AI layer, and color identity. The grammar of Velsanet network space.</div>
+    </a>
+    <a href="dikwei.html" class="page-card" style="--pc:var(--c08)">
+      <div class="page-flag">🧠</div>
+      <div class="page-badge">WHITE PAPER #08 · ENGLISH</div>
+      <div class="page-title">DIKWEI Cognitive<br/>Cycle</div>
+      <div class="page-desc">Data→Information→Knowledge→Wisdom→Execution→Intent. Step through each stage with the full Cube→PAI→AAI→AsAI→Cube loop.</div>
+    </a>
+    <a href="governance.html" class="page-card" style="--pc:var(--c18)">
+      <div class="page-flag">🌐</div>
+      <div class="page-badge">WHITE PAPER #18 · ENGLISH</div>
+      <div class="page-title">Q2–Q7 Governance<br/>Architecture</div>
+      <div class="page-desc">Order without control. Higher layers project structural states — they never command. National sovereignty encoded in topology. VELSA at planetary scale.</div>
+    </a>
+    <a href="path_lifecycle.html" class="page-card" style="--pc:var(--c16)">
+      <div class="page-flag">⟳</div>
+      <div class="page-badge">WHITE PAPER #16 · #17 · ENGLISH</div>
+      <div class="page-title">Path Lifecycle<br/>Simulator</div>
+      <div class="page-desc">Active → Standby → Overlapping → Degraded → Terminating. Make-before-break handover animation. Identity-bound paths that persist without recalculation.</div>
+    </a>
+    <a href="node_color.html" class="page-card" style="--pc:var(--c13)">
+      <div class="page-flag">🎨</div>
+      <div class="page-badge">WHITE PAPER #13 · ENGLISH</div>
+      <div class="page-title">Node Color<br/>System</div>
+      <div class="page-desc">Color is structural law. Cyan · Gray · Blue · Green · Violet — each polyhedral class permanently assigned. Vertical link gradients. Horizontal link rules. Reserved colors.</div>
+    </a>
+    <a href="moct.html" class="page-card" style="--pc:var(--c03)">
+      <div class="page-flag">⫶</div>
+      <div class="page-badge">WHITE PAPER #03 · #04 · ENGLISH</div>
+      <div class="page-title">MOCT Parallel<br/>Optical E2E</div>
+      <div class="page-desc">No packet switching. No routing tables. 100–1,000+ simultaneous optical cores. Fixed non-pluggable photonic substrate. Ch1 physical authentication. Compared to QSFP/SFP.</div>
+    </a>
+    <a href="en.html" class="page-card" style="--pc:var(--c06)">
+      <div class="page-flag">🇺🇸</div>
+      <div class="page-badge">WHITE PAPER #06 · ENGLISH</div>
+      <div class="page-title">T·C·I·E·M Cube<br/>Processing Flow</div>
+      <div class="page-desc">Interactive simulation from SEU formation through the full PAI→AAI→AsAI cognitive loop.</div>
+    </a>
+    <a href="ko.html" class="page-card" style="--pc:var(--c01)">
+      <div class="page-flag">🇰🇷</div>
+      <div class="page-badge">WHITE PAPER #06 · KOREAN</div>
+      <div class="page-title">T·C·I·E·M 큐브<br/>처리 과정</div>
+      <div class="page-desc">SEU 형성부터 PAI→AAI→AsAI 루프까지 인터랙티브 인지 순환 시뮬레이션.</div>
+    </a>
+    <a href="pai_lifelong_lifecycle_en.html" class="page-card" style="--pc:var(--c11)">
+      <div class="page-flag">🇺🇸</div>
+      <div class="page-badge">WHITE PAPERS #06 · #08 · #15 · ENGLISH</div>
+      <div class="page-title">PAI Personal<br/>Lifelong Data</div>
+      <div class="page-desc">From birth to death — how T, I, and M axes hold a person's complete cognitive existence.</div>
+    </a>
+    <a href="pai_lifelong_lifecycle.html" class="page-card" style="--pc:var(--c09)">
+      <div class="page-flag">🇰🇷</div>
+      <div class="page-badge">WHITE PAPERS #06 · #08 · #15 · KOREAN</div>
+      <div class="page-title">PAI 전생애<br/>주기 데이터</div>
+      <div class="page-desc">출생부터 사망까지 T·I·M Axis가 한 사람의 전체 인지 생애를 구조적으로 담는 방식 탐구.</div>
+    </a>
+  </div>
+</section>
+
+<hr class="divider"/>
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">02</span>
+    <span class="sec-title">Live Implementation — Try It Now</span>
+  </div>
+
+  <style>
+  .lang-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border-bright);border-radius:10px;overflow:hidden;width:100%;}
+  .lang-tab{flex:1;padding:14px 0;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;letter-spacing:4px;cursor:pointer;border:none;background:var(--dim);color:var(--muted);transition:all .2s;text-align:center;}
+  .lang-tab.active{background:#00E5FF18;color:#00E5FF;box-shadow:inset 0 -2px 0 #00E5FF;}
+  .lang-tab:hover:not(.active){color:var(--text);}
+  .demo-wrap{background:var(--surface);border:1px solid var(--border-bright);border-radius:16px;overflow:hidden;}
+  .demo-top{padding:24px 32px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .demo-api-label{font-size:9px;letter-spacing:4px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+  .demo-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--text);}
+  .demo-subtitle{font-size:11px;color:var(--muted);margin-top:4px;}
+  .demo-live-dot{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:2px;color:#76FF03;font-weight:700;}
+  .live-pulse{width:8px;height:8px;border-radius:50%;background:#76FF03;animation:lpulse 1.5s ease-in-out infinite;}
+  @keyframes lpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
+  .demo-body{padding:24px 32px;display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media(max-width:768px){.demo-body{grid-template-columns:1fr;}}
+  .step-block{margin-bottom:16px;}
+  .step-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .step-num{width:22px;height:22px;border-radius:50%;background:var(--dim);border:1px solid var(--border-bright);font-size:9px;font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .step-num.active{background:#00E5FF22;border-color:#00E5FF;color:#00E5FF;}
+  .step-label{font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:700;}
+  .step-label.active{color:#00E5FF;}
+  .demo-field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+  .demo-field{display:flex;flex-direction:column;gap:5px;}
+  .demo-field label{font-size:9px;letter-spacing:2px;color:var(--muted);font-weight:700;}
+  .demo-input{background:var(--dim);border:1px solid var(--border-bright);border-radius:6px;padding:8px 12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text);outline:none;transition:border-color .2s;width:100%;}
+  .demo-input:focus{border-color:#00E5FF55;}
+  .demo-select{background:var(--dim);border:1px solid var(--border-bright);border-radius:6px;padding:8px 12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text);outline:none;width:100%;cursor:pointer;}
+  .demo-select option{background:#080D12;}
+  .demo-textarea{background:var(--dim);border:1px solid var(--border-bright);border-radius:6px;padding:8px 12px;font-family:'Space Mono',monospace;font-size:10px;color:var(--text);outline:none;width:100%;resize:vertical;min-height:56px;}
+  .demo-textarea:focus{border-color:#00E5FF55;}
+  .demo-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .preset-btn{font-size:9px;letter-spacing:1px;padding:4px 10px;border-radius:4px;border:1px solid var(--border-bright);background:var(--dim);color:var(--muted);cursor:pointer;font-family:'Space Mono',monospace;transition:all .15s;}
+  .preset-btn:hover{border-color:#00E5FF;color:#00E5FF;}
+  .preset-btn.selected{border-color:#00E5FF;color:#00E5FF;background:#00E5FF11;}
+  .btn-run{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:linear-gradient(135deg,#00E5FF,#00B8CC);color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;padding:14px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;letter-spacing:.5px;margin-top:4px;}
+  .btn-run:hover{background:linear-gradient(135deg,#fff,#00E5FF);transform:translateY(-1px);}
+  .btn-run:disabled{background:var(--dim);color:var(--muted);cursor:not-allowed;transform:none;}
+  .pipeline-vis{display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .pipe-step{font-size:9px;letter-spacing:1px;padding:5px 10px;border-radius:4px;border:1px solid var(--border);color:var(--muted);background:var(--dim);font-family:'Space Mono',monospace;transition:all .3s;}
+  .pipe-step.running{border-color:#00E5FF;color:#00E5FF;background:#00E5FF11;animation:pipePulse .8s ease-in-out infinite;}
+  .pipe-step.done{border-color:#76FF03;color:#76FF03;background:#76FF0311;}
+  .pipe-step.error{border-color:#FF4444;color:#FF4444;background:#FF444411;}
+  .pipe-arrow{color:var(--muted);font-size:12px;}
+  @keyframes pipePulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .cube-result{background:var(--dim);border:1px solid var(--border);border-radius:12px;padding:18px;min-height:320px;display:flex;flex-direction:column;gap:10px;}
+  .cube-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);}
+  .cube-empty-icon{font-size:40px;opacity:.3;}
+  .cube-empty-text{font-size:10px;letter-spacing:2px;text-align:center;line-height:1.8;}
+  .cube-section-title{font-size:9px;letter-spacing:3px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+  .cube-seu-id{font-family:'Space Mono',monospace;font-size:9px;color:#00E5FF;background:#00E5FF11;border:1px solid #00E5FF33;border-radius:4px;padding:4px 10px;display:block;margin-bottom:8px;word-break:break-all;}
+  .cube-axes{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;}
+  .cube-axis{background:var(--surface);border:1px solid var(--border-bright);border-radius:8px;padding:10px 4px;text-align:center;}
+  .axis-letter{font-family:'Syne',sans-serif;font-size:18px;font-weight:900;line-height:1;}
+  .axis-name{font-size:8px;letter-spacing:1px;color:var(--muted);margin-top:3px;}
+  .axis-val{font-size:8px;color:var(--text);margin-top:4px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .cube-channels{display:flex;flex-direction:column;gap:5px;}
+  .channel-row{display:flex;align-items:center;gap:8px;}
+  .ch-id{font-size:9px;letter-spacing:1px;color:var(--muted);width:28px;flex-shrink:0;}
+  .ch-bar-wrap{flex:1;height:6px;background:var(--surface);border-radius:3px;overflow:hidden;}
+  .ch-bar{height:100%;border-radius:3px;transition:width .8s ease;}
+  .ch-label{font-size:9px;color:var(--muted);width:52px;text-align:right;flex-shrink:0;font-family:'Space Mono',monospace;}
+  .log-box{background:#000a;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);line-height:1.8;max-height:110px;overflow-y:auto;margin-top:8px;}
+  .log-line{display:flex;gap:8px;}
+  .log-time{color:#00E5FF44;flex-shrink:0;}
+  .log-ok{color:#76FF03;}
+  .log-err{color:#FF4444;}
+  .log-info{color:var(--muted);}
+  .demo-footer{padding:14px 32px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  /* ── Voice Input ── */
+  .v-bar{width:3px;background:#00E5FF;border-radius:2px;height:4px;transition:height .1s;flex-shrink:0;}
+  #voiceWaveform.recording .v-bar{animation:vwave .45s ease-in-out infinite alternate;}
+  .v-bar:nth-child(1){animation-delay:0s} .v-bar:nth-child(2){animation-delay:.04s}
+  .v-bar:nth-child(3){animation-delay:.08s} .v-bar:nth-child(4){animation-delay:.12s}
+  .v-bar:nth-child(5){animation-delay:.16s} .v-bar:nth-child(6){animation-delay:.20s}
+  .v-bar:nth-child(7){animation-delay:.24s} .v-bar:nth-child(8){animation-delay:.28s}
+  .v-bar:nth-child(9){animation-delay:.32s} .v-bar:nth-child(10){animation-delay:.36s}
+  .v-bar:nth-child(11){animation-delay:.40s} .v-bar:nth-child(12){animation-delay:.44s}
+  @keyframes vwave{from{height:3px}to{height:var(--vh,20px)}}
+  #micBtn.recording{border-color:#FF4444!important;background:#FF444415!important;animation:micPulse 1s ease-in-out infinite;}
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 #FF444440}50%{box-shadow:0 0 0 10px #FF444400}}
+  /* ── Server Wake Banner ── */
+  .server-wake-banner{background:linear-gradient(135deg,#0A0E00,#1A1800);border:1px solid #FFD74066;border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;font-size:11px;color:var(--muted);}
+  .server-wake-banner a{color:#00E5FF;font-weight:700;text-decoration:underline;}
+  .server-wake-banner a:hover{color:#FFD740;}
+  .demo-footer-note{font-size:9px;color:var(--muted);letter-spacing:1px;}
+  .demo-footer-link{font-size:9px;letter-spacing:2px;color:#00E5FF;text-decoration:none;font-weight:700;}
+  .demo-footer-link:hover{color:#fff;}
+  .cube-confidence{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .conf-label{font-size:9px;color:var(--muted);letter-spacing:1px;width:70px;}
+  .conf-bar-wrap{flex:1;height:4px;background:var(--surface);border-radius:2px;overflow:hidden;}
+  .conf-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,#00E5FF,#76FF03);}
+  .conf-val{font-size:9px;color:#76FF03;font-family:'Space Mono',monospace;width:32px;text-align:right;}
+  </style>
+
+  <!-- LANGUAGE TABS -->
+  <div class="lang-tabs">
+    <button class="lang-tab active" onclick="switchLang('ko')" id="tab_ko">🇰🇷 한국어</button>
+    <button class="lang-tab" onclick="switchLang('en')" id="tab_en">🇺🇸 ENGLISH</button>
+  </div>
+
+  <!-- 서버 슬립 경고 배너 (언어 전환 반응) -->
+  <div class="server-wake-banner" id="serverWakeBanner">
+    <span style="font-size:18px;flex-shrink:0;">⚡</span>
+    <div>
+      <strong style="color:#FFD740;" id="bannerTitle">백엔드 서버가 슬립 상태일 수 있습니다.</strong>
+      <span id="bannerDesc"> API가 응답하지 않거나 느리면, 아래 링크로 먼저 서버를 깨워주세요. 페이지가 열리면 활성화 완료입니다.</span><br/>
+      <a href="https://velsanet-whitepapers.onrender.com/docs" target="_blank">🔗 https://velsanet-whitepapers.onrender.com/docs</a>
+    </div>
+  </div>
+
+  <div class="demo-wrap">
+    <div class="demo-top">
+      <div>
+        <div class="demo-api-label">LIVE SERVER · PAI 8-CHANNEL → META CUBE SYSTEM</div>
+        <div class="demo-title">Cognition Cube Builder</div>
+        <div class="demo-subtitle" id="demoSubtitle">SEU → Raw → Meta → Cube · 실제 API에 직접 연결됩니다</div>
+      </div>
+      <div class="demo-live-dot"><div class="live-pulse"></div>LIVE</div>
+    </div>
+
+    <div class="demo-body">
+      <!-- LEFT -->
+      <div>
+        <div class="step-block">
+          <div class="step-head">
+            <div class="step-num active">✦</div>
+            <div class="step-label active" id="labelScenario">예시 시나리오 선택</div>
+          </div>
+          <div class="demo-presets" id="presetBtns"></div>
+        </div>
+
+        <div class="step-block">
+          <div class="step-head">
+            <div class="step-num active">1</div>
+            <div class="step-label active">SEU — Semantic Event Unit</div>
+          </div>
+
+          <!-- SEU 안내 문구 (언어 전환 반응) -->
+          <div id="seuGuide" style="margin-bottom:14px;">
+            <div id="seuGuideText"></div>
+          </div>
+
+          <div class="demo-field-row">
+            <div class="demo-field">
+              <label id="lbl_source">SOURCE TYPE</label>
+              <select class="demo-select" id="f_source_type" onchange="onSourceTypeChange(this.value)">
+                <option value="audio">🎙️ VOICE</option>
+                <option value="text">TEXT</option>
+                <option value="vision">VISION</option>
+                <option value="sensor">SENSOR</option>
+              </select>
+            </div>
+            <div class="demo-field">
+              <label>DURATION (ms)</label>
+              <input class="demo-input" id="f_duration" type="number" value="1200"/>
+            </div>
+          </div>
+
+          <!-- 음성 입력 영역 (audio 선택시 기본) -->
+          <div id="voiceInputBlock" style="margin-bottom:8px;">
+            <label style="font-size:9px;letter-spacing:2px;color:var(--muted);font-weight:700;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span id="lbl_content">RAW CONTENT — VOICE INPUT</span>
+              <span style="font-size:8px;padding:2px 7px;border-radius:3px;background:#29B6F611;border:1px solid #29B6F655;color:#29B6F6;letter-spacing:1px;">CH2 AUDIO STREAM</span>
+            </label>
+
+            <!-- 언어 선택 -->
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+              <span style="font-size:9px;color:var(--muted);letter-spacing:1px;">LANG</span>
+              <button id="vLangKo" onclick="setVoiceLang('ko-KR')" style="font-size:9px;letter-spacing:1px;padding:3px 9px;border-radius:4px;border:1px solid var(--border-bright);background:#00E5FF18;color:#00E5FF;cursor:pointer;font-family:'Space Mono',monospace;">한국어</button>
+              <button id="vLangEn" onclick="setVoiceLang('en-US')" style="font-size:9px;letter-spacing:1px;padding:3px 9px;border-radius:4px;border:1px solid var(--border-bright);background:var(--dim);color:var(--muted);cursor:pointer;font-family:'Space Mono',monospace;">ENGLISH</button>
+            </div>
+
+            <!-- 마이크 + 파형 -->
+            <div style="background:var(--dim);border:1px solid var(--border-bright);border-radius:8px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <!-- 파형 시각화 -->
+              <div id="voiceWaveform" style="display:flex;align-items:center;justify-content:center;gap:3px;height:28px;width:100%;">
+                <div class="v-bar" style="--vh:4px"></div><div class="v-bar" style="--vh:10px"></div>
+                <div class="v-bar" style="--vh:18px"></div><div class="v-bar" style="--vh:24px"></div>
+                <div class="v-bar" style="--vh:14px"></div><div class="v-bar" style="--vh:20px"></div>
+                <div class="v-bar" style="--vh:8px"></div><div class="v-bar" style="--vh:22px"></div>
+                <div class="v-bar" style="--vh:12px"></div><div class="v-bar" style="--vh:6px"></div>
+                <div class="v-bar" style="--vh:16px"></div><div class="v-bar" style="--vh:20px"></div>
+              </div>
+
+              <!-- 마이크 버튼 + 타이머 -->
+              <div style="display:flex;align-items:center;gap:14px;">
+                <button id="micBtn" onclick="toggleMic()" title="Click to record"
+                  style="width:52px;height:52px;border-radius:50%;border:2px solid #00E5FF55;background:#00E5FF0A;cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;transition:all .2s;outline:none;flex-shrink:0;">
+                  🎙️
+                </button>
+                <div>
+                  <div id="micStatus" style="font-size:10px;color:var(--muted);letter-spacing:1px;">클릭하여 음성 입력 시작</div>
+                  <div id="recTimer" style="font-size:11px;color:#FF4444;font-family:'Space Mono',monospace;min-height:14px;margin-top:2px;"></div>
+                </div>
+              </div>
+
+              <!-- STT 결과 -->
+              <div style="width:100%;background:#00000066;border:1px solid var(--border);border-radius:6px;padding:7px 10px;min-height:36px;display:flex;align-items:flex-start;gap:6px;">
+                <span style="font-size:9px;color:#00E5FF;white-space:nowrap;padding-top:1px;letter-spacing:1px;">STT→</span>
+                <span id="sttDisplay" style="font-size:10px;color:var(--muted);line-height:1.6;font-family:'Space Mono',monospace;">음성을 인식하면 여기에 표시됩니다.</span>
+              </div>
+            </div>
+
+            <!-- hidden: actual f_content 값은 JS가 채워줌 -->
+            <input type="hidden" id="f_content" value=""/>
+          </div>
+
+          <!-- 텍스트 입력 영역 (text/vision/sensor 선택시) -->
+          <div id="textInputBlock" style="display:none;margin-bottom:8px;">
+            <div class="demo-field">
+              <label id="lbl_content_text">RAW CONTENT</label>
+              <textarea class="demo-textarea" id="f_content_text" placeholder=""></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-block">
+          <div class="step-head">
+            <div class="step-num active">2</div>
+            <div class="step-label active" id="lbl_channels">8 CHANNELS — Raw Data</div>
+          </div>
+          <div id="channelFields"></div>
+        </div>
+
+        <button class="btn-run" id="btnRun" onclick="runPipeline()">
+          <span id="btnLabel">⚡ BUILD CUBE</span>
+        </button>
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <div class="pipeline-vis">
+          <div class="pipe-step" id="ps_seu">SEU</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-step" id="ps_raw">RAW×8</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-step" id="ps_meta">META×8</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-step" id="ps_cube">CUBE</div>
+        </div>
+
+        <div class="cube-result" id="cubeResult">
+          <div class="cube-empty">
+            <div class="cube-empty-icon">⬡</div>
+            <div class="cube-empty-text" id="emptyText">예시를 선택하거나<br/>직접 입력 후<br/>BUILD CUBE를 실행하세요</div>
+          </div>
+        </div>
+
+        <div class="log-box" id="logBox">
+          <div class="log-line"><span class="log-time">--:--:--</span><span class="log-info" id="logInit">파이프라인 대기 중...</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-footer">
+      <div class="demo-footer-note">Velsanet Live API · velsanet-whitepapers.onrender.com</div>
+      <a href="https://velsanet-whitepapers.onrender.com/docs" class="demo-footer-link" target="_blank">SWAGGER DOCS ↗</a>
+    </div>
+  </div>
+
+  <script>
+  const API = 'https://velsanet-whitepapers.onrender.com';
+  const AXIS_COLORS = {T:'#00E5FF',C:'#76FF03',I:'#FFD740',E:'#E040FB',M:'#FF6D00'};
+  const CH_COLORS = ['#00E5FF','#29B6F6','#76FF03','#E040FB','#FFD740','#FF6D00','#FF4444','#CE93D8'];
+
+  // ── 언어 데이터 (백서 #06 기준 채널 정의) ──────────────
+  // CH1: Video Frames (RGB/Depth)  CH2: Audio Stream
+  // CH3: Spatial-Temporal          CH4: Biometric Signals
+  // CH5: Text Input                CH6: Device Interactions
+  // CH7: User Mode/Context (PRIMARY) CH8: Environmental Attributes
+
+  const CH_DEF = {
+    ko: [
+      { id:'CH1', name:'영상 프레임', hint:'RGB/깊이/장면 정보 (예: 카페 창가, 조명 밝음, 노트북 화면)' },
+      { id:'CH2', name:'음성 스트림', hint:'음성/주변음/맥락 신호 (예: 잔잔한 음악, 키보드 소리, 대화)' },
+      { id:'CH3', name:'공간-시간', hint:'위치/이동 경로/타임스탬프 (예: 37.5665,126.9780 / 지하철 이동 중)' },
+      { id:'CH4', name:'생체 신호', hint:'심박/제스처/미세표정 (예: 심박 72bpm, 미소 감지, 고개 끄덕임)' },
+      { id:'CH5', name:'텍스트 입력', hint:'사용자 입력 텍스트/타이핑 (예: "보고서 초안 작성 중")' },
+      { id:'CH6', name:'기기 상호작용', hint:'앱 전환/클릭/스크롤 (예: 노트앱 열림, 화면 응시 22초)' },
+      { id:'CH7', name:'사용자 모드', hint:'현재 사용자 상태/모드 — 가장 중요! (예: 휴식 및 회복 모드, 학습 모드, 집중 모드)' },
+      { id:'CH8', name:'환경 속성', hint:'온도/조도/소음 수준 (예: 22°C, 조도 340lux, 소음 42dB)' },
+    ],
+    en: [
+      { id:'CH1', name:'Video Frames', hint:'RGB/depth/semantic scene (e.g., café window, bright lighting, laptop screen)' },
+      { id:'CH2', name:'Audio Stream', hint:'Speech/ambient/context cues (e.g., soft music, keyboard sound, conversation)' },
+      { id:'CH3', name:'Spatial-Temporal', hint:'Location/trajectory/timestamp (e.g., 37.5665,126.9780 / on subway)' },
+      { id:'CH4', name:'Biometric Signals', hint:'Heart rate/gesture/micro-expression (e.g., HR 72bpm, smile, nodding)' },
+      { id:'CH5', name:'Text Input', hint:'Typed text/user input (e.g., "drafting report outline")' },
+      { id:'CH6', name:'Device Interactions', hint:'App switches/clicks/gaze (e.g., note app opened, screen focus 22s)' },
+      { id:'CH7', name:'User Mode', hint:'Current user state — primary mode signal! (e.g., rest & recovery mode, learning mode, focus mode)' },
+      { id:'CH8', name:'Environment', hint:'Temperature/light/noise level (e.g., 22°C, 340lux, 42dB)' },
+    ]
+  };
+
+  const LANG = {
+    ko: {
+      subtitle: 'SEU → Raw → Meta → Cube · 실제 API에 직접 연결됩니다',
+      labelScenario: '예시 시나리오 선택',
+      labelChannels: '8 원신호 채널 (백서 #06)',
+      btnBuild: '⚡ CUBE 빌드',
+      btnBuilding: '⏳ 처리 중...',
+      emptyText: '예시를 선택하거나\n직접 입력 후\nCUBE 빌드를 실행하세요',
+      logWait: '파이프라인 대기 중...',
+      logSeu: 'POST /seu → SEU 생성 중...',
+      logSeuOk: 'SEU 생성 완료',
+      logRaw: (ch, name) => `POST /channel/raw → ${ch} (${name}) 등록 중...`,
+      logRawOk: ch => `${ch} 등록 완료`,
+      logMeta: ch => `POST /channel/meta → ${ch} Meta 연산 중...`,
+      logMetaOk: ch => `${ch} Meta 완료`,
+      logCube: 'POST /cube/build → Cube 빌드 중...',
+      logCubeOk: 'Cube 빌드 완료!',
+      logGet: id => `GET /cube/${id} → 결과 조회 중...`,
+      logGetOk: '결과 수신 완료',
+      errSleep: '서버가 슬립 상태일 수 있습니다.\n잠시 후 다시 시도해주세요.',
+      axisNames: ['시각','맥락','의도','감정','메타'],
+      chLabels: ['영상(CH1)','음성(CH2)','공간(CH3)','생체(CH4)','텍스트(CH5)','기기(CH6)','사용자모드(CH7)','환경(CH8)'],
+      presets: [
+        { key:'morning', label:'☀️ 아침 출근', source_type:'sensor', duration:1200,
+          content:'지하철 탑승 중. 커피를 손에 들고 창밖 도시 풍경을 바라보며 오늘 업무를 머릿속으로 정리 중.',
+          channels:[
+            'RGB: 지하철 창밖 도시 풍경, 조명 보통, 승객들 착석',
+            '음성: 지하철 안내 방송 + 배경 소음 62dB',
+            '위치: 37.5172,127.0473 / 지하철 2호선 이동 중',
+            '생체: 심박 78bpm, 자세 직립, 시선 창밖 고정',
+            '텍스트: "오늘 보고서 마감, 팀미팅 3시"',
+            '앱: 캘린더 확인 8초, 메모앱 전환',
+            '사용자 모드: 출근 준비 모드 (mode_transit)',
+            '환경: 18°C, 조도 220lux, 소음 62dB'
+          ]},
+        { key:'meeting', label:'💼 팀 회의', source_type:'audio', duration:800,
+          content:'회의실에서 팀 미팅 중. 프로젝트 진행 상황 보고 및 다음 단계 전략 논의.',
+          channels:[
+            'RGB: 발표 슬라이드 화면, 회의실 조명 밝음',
+            '음성: 다수 목소리 교차, 발표음성 74dB',
+            '위치: 37.5001,127.0379 / 사무실 3층 회의실',
+            '생체: 심박 88bpm, 제스처 활발, 발표 중 표정',
+            '텍스트: "Q3 성과 120% 달성, 다음 목표 설정"',
+            '앱: 화면 공유 중, 슬라이드 클릭 14회',
+            '사용자 모드: 팀 회의 진행 중 (mode_social)',
+            '환경: 22°C, 조도 480lux, 소음 68dB'
+          ]},
+        { key:'study', label:'📚 학습 집중', source_type:'vision', duration:1500,
+          content:'카페에서 Velsanet 백서를 읽으며 핵심 개념을 노트에 정리 중. 깊은 집중 상태.',
+          channels:[
+            'RGB: 백서 PDF 화면, 노트북 스크린, 카페 인테리어',
+            '음성: 잔잔한 BGM 38dB, 카페 배경소음',
+            '위치: 37.5171,127.0422 / 카페 창가 좌석',
+            '생체: 심박 65bpm, 눈 깜빡임 감소, 전방 응시',
+            '텍스트: "PAI Cube T-C-I-E-M 축 구조 메모"',
+            '앱: PDF 리더 22분 지속, 스크롤 느림',
+            '사용자 모드: 집중 학습 모드 (mode_learning)',
+            '환경: 21°C, 조도 340lux, 소음 38dB'
+          ]},
+        { key:'rest', label:'🌙 저녁 휴식', source_type:'sensor', duration:2000,
+          content:'퇴근 후 소파에서 음악을 들으며 휴식. 하루를 회고하는 조용한 시간.',
+          channels:[
+            'RGB: 어두운 거실, 간접 조명, TV 꺼진 상태',
+            '음성: 재즈 음악 42dB, 외부 차량 소리 간헐적',
+            '위치: 37.4983,127.0281 / 자택 거실',
+            '생체: 심박 61bpm, 자세 이완, 눈꺼풀 무거움',
+            '텍스트: (입력 없음)',
+            '앱: Spotify 재생 중, 화면 터치 없음 8분',
+            '사용자 모드: 휴식 및 회복 모드 (mode_recovery)',
+            '환경: 20°C, 조도 85lux, 소음 32dB'
+          ]},
+        { key:'custom', label:'✏️ 직접 입력', source_type:'sensor', duration:1000,
+          content:'', channels:['','','','','','','',''] }
+      ]
+    },
+    en: {
+      subtitle: 'SEU → Raw → Meta → Cube · Connected to live API',
+      labelScenario: 'Choose a scenario',
+      labelChannels: '8 Raw Signal Channels (WP #06)',
+      btnBuild: '⚡ BUILD CUBE',
+      btnBuilding: '⏳ Processing...',
+      emptyText: 'Select a scenario or\nenter your own data,\nthen click BUILD CUBE',
+      logWait: 'Pipeline idle...',
+      logSeu: 'POST /seu → Creating SEU...',
+      logSeuOk: 'SEU created',
+      logRaw: (ch, name) => `POST /channel/raw → ${ch} (${name}) registering...`,
+      logRawOk: ch => `${ch} registered`,
+      logMeta: ch => `POST /channel/meta → ${ch} computing...`,
+      logMetaOk: ch => `${ch} meta done`,
+      logCube: 'POST /cube/build → Building cube...',
+      logCubeOk: 'Cube built!',
+      logGet: id => `GET /cube/${id} → fetching result...`,
+      logGetOk: 'Result received',
+      errSleep: 'Server may be sleeping.\nPlease try again in a moment.',
+      axisNames: ['Time','Context','Intent','Emotion','Meta'],
+      chLabels: ['VIDEO','AUDIO','SPATIAL','BIOMETRIC','TEXT/NLP','DEVICE','USER MODE','ENVIRON'],
+      presets: [
+        { key:'commute', label:'🚇 Morning Commute', source_type:'sensor', duration:1200,
+          content:'On the subway, coffee in hand, watching the city through the window while mentally planning the day.',
+          channels:[
+            'RGB: subway window, city view, normal lighting, seated passengers',
+            'Audio: subway announcement + ambient noise 62dB',
+            'Location: 37.5172,127.0473 / subway line 2, moving',
+            'Biometric: HR 78bpm, upright posture, gaze fixed outward',
+            'Text input: "Report due today, team meeting 3pm"',
+            'Device: calendar viewed 8s, switched to memo app',
+            'Metadata: Galaxy S24, LTE, battery 64%',
+            'Environment: 18°C, 220lux, noise 62dB'
+          ]},
+        { key:'meeting', label:'💼 Team Meeting', source_type:'audio', duration:800,
+          content:'In a conference room presenting project progress and discussing next steps with the team.',
+          channels:[
+            'RGB: presentation slide on screen, bright conference room',
+            'Audio: multiple overlapping voices, speaker 74dB',
+            'Location: 37.5001,127.0379 / office 3F meeting room',
+            'Biometric: HR 88bpm, active gestures, presenting expression',
+            'Text input: "Q3 result 120%, setting next target"',
+            'Device: screen sharing active, slide clicked 14 times',
+            'Metadata: MacBook Pro, WiFi 5GHz, battery 43%',
+            'Environment: 22°C, 480lux, noise 68dB'
+          ]},
+        { key:'study', label:'📚 Deep Study', source_type:'vision', duration:1500,
+          content:'At a café, reading the Velsanet white paper and taking structured notes. Deep focus state.',
+          channels:[
+            'RGB: PDF white paper on screen, café interior visible',
+            'Audio: soft background music 38dB, café ambience',
+            'Location: 37.5171,127.0422 / café window seat',
+            'Biometric: HR 65bpm, reduced blink rate, sustained gaze',
+            'Text input: "PAI Cube T-C-I-E-M axis structure note"',
+            'Device: PDF reader sustained 22min, slow scroll',
+            'Metadata: iPad Pro, WiFi, battery 81%',
+            'Environment: 21°C, 340lux, noise 38dB'
+          ]},
+        { key:'rest', label:'🌙 Evening Rest', source_type:'sensor', duration:2000,
+          content:'After work on the sofa, listening to music and quietly reflecting on the day.',
+          channels:[
+            'RGB: dim living room, indirect lighting, TV off',
+            'Audio: jazz music 42dB, occasional traffic sound',
+            'Location: 37.4983,127.0281 / home living room',
+            'Biometric: HR 61bpm, relaxed posture, heavy eyelids',
+            'Text input: (none)',
+            'Device: Spotify playing, no screen touch for 8min',
+            'Metadata: iPhone 15, WiFi, battery 34%',
+            'Environment: 20°C, 85lux, noise 32dB'
+          ]},
+        { key:'custom', label:'✏️ Custom Input', source_type:'sensor', duration:1000,
+          content:'', channels:['','','','','','','',''] }
+      ]
+    }
+  };
+
+  let currentLang = 'ko';
+  let currentPresetKey = 'morning';
+
+  const CH_INPUT_IDS = ['ch_visual','ch_audio','ch_lang','ch_emotion','ch_body','ch_social','ch_intent','ch_meta'];
+  const CH_KEYS = ['CH1','CH2','CH3','CH4','CH5','CH6','CH7','CH8'];
+  const CH_NAMES = ['video','audio','spatial','biometric','text','device','metadata','environment'];
+
+  function switchLang(lang) {
+    currentLang = lang;
+    document.getElementById('tab_ko').classList.toggle('active', lang==='ko');
+    document.getElementById('tab_en').classList.toggle('active', lang==='en');
+    // 서버 배너 언어 전환
+    const bannerTitle = document.getElementById('bannerTitle');
+    const bannerDesc  = document.getElementById('bannerDesc');
+    if(bannerTitle && bannerDesc) {
+      if(lang === 'ko') {
+        bannerTitle.textContent = '백엔드 서버가 슬립 상태일 수 있습니다.';
+        bannerDesc.textContent  = ' API가 응답하지 않거나 느리면, 아래 링크로 먼저 서버를 깨워주세요. 페이지가 열리면 활성화 완료입니다.';
+      } else {
+        bannerTitle.textContent = 'The backend server may be sleeping.';
+        bannerDesc.textContent  = ' If the API is slow or unresponsive, wake it up first via the link below. Once the page loads, the server is active.';
+      }
+    }
+    // SEU 안내 문구 언어 전환
+    renderSeuGuide(lang);
+    applyLangUI();
+    // re-apply preset in new lang (find matching key or first)
+    const L = LANG[lang];
+    const match = L.presets.find(p=>p.key===currentPresetKey) || L.presets[0];
+    applyPreset(match.key);
+  }
+
+  function applyLangUI() {
+    const L = LANG[currentLang];
+    document.getElementById('demoSubtitle').textContent = L.subtitle;
+    document.getElementById('labelScenario').textContent = L.labelScenario;
+    document.getElementById('lbl_channels').textContent = L.labelChannels;
+    document.getElementById('btnLabel').textContent = L.btnBuild;
+    document.getElementById('emptyText') && (document.getElementById('emptyText').innerHTML = L.emptyText.replace(/\n/g,'<br/>'));
+    document.getElementById('logInit') && (document.getElementById('logInit').textContent = L.logWait);
+    // mic status 언어 동기화
+    const _st = document.getElementById('micStatus');
+    if(_st && !_isRecording && _st.style.color !== 'rgb(118, 255, 3)') {
+      _st.textContent = currentLang==='ko' ? '클릭하여 음성 입력 시작' : 'Click to start recording';
+    }
+    renderChannelFields();
+    renderPresetBtns();
+    renderSeuGuide(currentLang);
+  }
+
+  function renderChannelFields() {
+    const defs = CH_DEF[currentLang];
+    const wrap = document.getElementById('channelFields');
+    let html = '';
+    for(let i=0; i<8; i+=2) {
+      html += `<div class="demo-field-row">`;
+      for(let j=i; j<i+2 && j<8; j++) {
+        const d = defs[j];
+        html += `<div class="demo-field">
+          <label style="display:flex;align-items:center;gap:5px;">
+            <span style="color:#00E5FF;font-family:'Space Mono',monospace">${d.id}</span>
+            <span>${d.name}</span>
+          </label>
+          <input class="demo-input" id="${CH_INPUT_IDS[j]}" placeholder="${d.hint}" title="${d.hint}"/>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+    wrap.innerHTML = html;
+  }
+
+  function renderPresetBtns() {
+    const L = LANG[currentLang];
+    const wrap = document.getElementById('presetBtns');
+    wrap.innerHTML = L.presets.map(p =>
+      `<button class="preset-btn${p.key===currentPresetKey?' selected':''}" onclick="applyPreset('${p.key}')">${p.label}</button>`
+    ).join('');
+  }
+
+  function applyPreset(key) {
+    currentPresetKey = key;
+    const L = LANG[currentLang];
+    const p = L.presets.find(x=>x.key===key) || L.presets[0];
+    document.getElementById('f_source_type').value = p.source_type;
+    document.getElementById('f_duration').value = p.duration;
+    // 음성/텍스트 양쪽 content 필드에 preset 내용 채우기
+    const hiddenF = document.getElementById('f_content');
+    const textF = document.getElementById('f_content_text');
+    if(hiddenF) hiddenF.value = p.content;
+    if(textF) textF.value = p.content;
+    // STT 디스플레이에 preset content 미리 표시
+    const sttDisplay = document.getElementById('sttDisplay');
+    if(sttDisplay && p.content) { sttDisplay.textContent = p.content; sttDisplay.style.color = 'var(--text)'; }
+    CH_INPUT_IDS.forEach((id,i) => { const el=document.getElementById(id); if(el) el.value = p.channels[i]||''; });
+    onSourceTypeChange(p.source_type);
+    renderPresetBtns();
+  }
+
+  // ── SOURCE TYPE 전환 (음성 ↔ 텍스트 영역) ──
+  function onSourceTypeChange(val) {
+    const isVoice = (val === 'audio');
+    const vb = document.getElementById('voiceInputBlock');
+    const tb = document.getElementById('textInputBlock');
+    if(vb) vb.style.display = isVoice ? 'block' : 'none';
+    if(tb) tb.style.display = isVoice ? 'none' : 'block';
+    renderSeuGuide(currentLang);
+  }
+
+  function log(msg, type='info') {
+    const box = document.getElementById('logBox');
+    const now = new Date().toTimeString().slice(0,8);
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span class="log-time">${now}</span><span class="log-${type}">${msg}</span>`;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function setPipe(id, state) {
+    document.getElementById('ps_'+id).className = 'pipe-step ' + state;
+  }
+
+  async function runPipeline() {
+    const L = LANG[currentLang];
+    const btn = document.getElementById('btnRun');
+    btn.disabled = true;
+    document.getElementById('btnLabel').textContent = L.btnBuilding;
+    ['seu','raw','meta','cube'].forEach(s=>setPipe(s,''));
+    document.getElementById('logBox').innerHTML = '';
+
+    try {
+      // STEP 1: SEU
+      setPipe('seu','running');
+      log(L.logSeu);
+      // content: 음성이면 hidden f_content, 아닌경우 f_content_text
+    const _srcType = document.getElementById('f_source_type').value;
+    const _contentEl = _srcType === 'audio'
+      ? document.getElementById('f_content')
+      : document.getElementById('f_content_text');
+    const duration_ms = parseInt(document.getElementById('f_duration').value)||1200;
+      const tsStart = new Date().toISOString();
+      const tsEnd = new Date(Date.now()+duration_ms).toISOString();
+      const seuRes = await fetch(API+'/seu', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ time:{ts_start:tsStart,ts_end:tsEnd,duration_ms}, device_id:`demo_${Date.now()}`, privacy_level:'raw_first', content: _contentEl ? _contentEl.value : '' })
+      });
+      if(!seuRes.ok) throw new Error(`SEU ${seuRes.status}`);
+      const {seu_id} = await seuRes.json();
+      log(`${L.logSeuOk} → ${seu_id}`, 'ok');
+      setPipe('seu','done');
+
+      // STEP 2: RAW x8
+      setPipe('raw','running');
+      for(let i=0;i<8;i++){
+        const val = document.getElementById(CH_INPUT_IDS[i]).value || CH_NAMES[i];
+        log(L.logRaw(CH_KEYS[i], CH_NAMES[i]));
+        const r = await fetch(API+'/channel/raw', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ seu_id, channel_id:CH_KEYS[i], ts_start:tsStart, ts_end:tsEnd, raw_ref:val, quality_flags:[] })
+        });
+        if(!r.ok) throw new Error(`Raw ${CH_KEYS[i]}: ${r.status}`);
+        log(L.logRawOk(CH_KEYS[i]), 'ok');
+      }
+      setPipe('raw','done');
+
+      // STEP 3: META x8
+      setPipe('meta','running');
+      for(let i=0;i<8;i++){
+        log(L.logMeta(CH_KEYS[i]));
+        const r = await fetch(API+`/channel/meta/${seu_id}/${CH_KEYS[i]}`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'
+        });
+        if(!r.ok) throw new Error(`Meta ${CH_KEYS[i]}: ${r.status}`);
+        log(L.logMetaOk(CH_KEYS[i]), 'ok');
+      }
+      setPipe('meta','done');
+
+      // STEP 4: CUBE
+      setPipe('cube','running');
+      log(L.logCube);
+      const cubeRes = await fetch(API+'/cube/build', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({seu_id})
+      });
+      if(!cubeRes.ok) throw new Error(`Cube: ${cubeRes.status}`);
+      const cubeData = await cubeRes.json();
+      log(L.logCubeOk, 'ok');
+      setPipe('cube','done');
+
+      // GET result
+      log(L.logGet(seu_id));
+      const getRes = await fetch(API+`/cube/${seu_id}`);
+      const cube = getRes.ok ? await getRes.json() : (cubeData.cube || cubeData);
+      log(L.logGetOk, 'ok');
+
+      renderCube(seu_id, cubeData.cube || cubeData);
+
+    } catch(e) {
+      log(e.message, 'err');
+      ['seu','raw','meta','cube'].forEach(s=>{
+        const el = document.getElementById('ps_'+s);
+        if(el.classList.contains('running')) el.className='pipe-step error';
+      });
+      const L = LANG[currentLang];
+      document.getElementById('cubeResult').innerHTML = `
+        <div class="cube-empty">
+          <div class="cube-empty-icon">⚠</div>
+          <div class="cube-empty-text" style="color:#FF4444">${e.message}<br/><br/>
+          <span style="color:var(--muted);font-size:9px;">${L.errSleep.replace(/\n/g,'<br/>')}</span></div>
+        </div>`;
+    } finally {
+      btn.disabled = false;
+      document.getElementById('btnLabel').textContent = LANG[currentLang].btnBuild;
+    }
+  }
+
+  function renderCube(seu_id, cube) {
+    const L = LANG[currentLang];
+    const el = document.getElementById('cubeResult');
+
+    // ── 축 값 추출 ──
+    const tVal = cube?.t?.value ? new Date(cube.t.value).toLocaleTimeString() : '—';
+    const cVal = (cube?.c?.value || '—').slice(0, 28);
+    const iVal = (cube?.i?.value || '—').slice(0, 28);
+    const eVal = (cube?.e?.value || '—').slice(0, 28);
+    const mMode = cube?.m?.cognitive_mode || 'ambient';
+    const mLabel = currentLang === 'ko' ? (cube?.m?.mode_label_ko || '—') : (cube?.m?.mode_label || '—');
+    const mColor = cube?.m?.mode_color || '#3A5060';
+    const mScore = cube?.m?.mode_score || 0;
+    const mNarr  = cube?.m?.narrative?.[currentLang] || '';
+    const mScores = cube?.m?.mode_scores || {};
+    const axisVals = [tVal, cVal, iVal, eVal, mLabel];
+
+    // ── 8채널 activation 추출 ──
+    const chScores = CH_KEYS.map(ch => {
+      const m = cube?.channel_metas?.[ch];
+      return parseFloat(m?.activation) || 0.4;
+    });
+    const chSigTypes = CH_KEYS.map(ch => cube?.channel_metas?.[ch]?.signal_type || '');
+
+    // ── M축 모드 스코어 바 렌더 ──
+    const modeOrder = ['deep_focus','task_execution','active_social','learning','rest_recovery','alert_standby','ambient'];
+    const modeNames = {
+      ko: {deep_focus:'깊은 집중', task_execution:'과제 실행', active_social:'사회적 활성',
+           learning:'학습 모드', rest_recovery:'휴식·회복', alert_standby:'경계 대기', ambient:'배경 모드'},
+      en: {deep_focus:'Deep Focus', task_execution:'Task Execution', active_social:'Active Social',
+           learning:'Learning', rest_recovery:'Rest & Recovery', alert_standby:'Alert Standby', ambient:'Ambient'},
+    };
+    const modeColors = {
+      deep_focus:'#00E5FF', task_execution:'#FF6D00', active_social:'#76FF03',
+      learning:'#FFD740', rest_recovery:'#CE93D8', alert_standby:'#FF4444', ambient:'#3A5060'
+    };
+
+    const mScoreBars = modeOrder.map(mk => {
+      const sc = mScores[mk] || 0;
+      const active = mk === mMode;
+      const name = modeNames[currentLang][mk] || mk;
+      return `<div class="channel-row" style="${active?'opacity:1':'opacity:0.45'}">
+        <div class="ch-id" style="width:80px;font-size:8px;color:${active?modeColors[mk]:'var(--muted)'}">${name}</div>
+        <div class="ch-bar-wrap"><div class="ch-bar" style="width:${Math.min(sc*100,100).toFixed(0)}%;background:${modeColors[mk]}${active?'':'88'}"></div></div>
+        <div class="ch-val" style="font-size:9px;color:${active?modeColors[mk]:'var(--muted)'};width:32px;text-align:right;font-family:'Space Mono',monospace">${(sc*100).toFixed(0)}%</div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div>
+        <div class="cube-section-title">SEU ID</div>
+        <div class="cube-seu-id">${seu_id}</div>
+      </div>
+
+      <div>
+        <div class="cube-section-title">T · C · I · E · M AXES</div>
+        <div class="cube-axes">
+          ${['T','C','I','E','M'].map((a,idx)=>{
+            const isM = a==='M';
+            const color = isM ? mColor : AXIS_COLORS[a];
+            const val = axisVals[idx];
+            return `<div class="cube-axis" style="${isM?`border-color:${mColor}44;background:${mColor}0A`:'' }">
+              <div class="axis-letter" style="color:${color}">${a}</div>
+              <div class="axis-name">${L.axisNames[idx]}</div>
+              <div class="axis-val" style="${isM?`color:${mColor};font-weight:700`:''}">${val}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div style="background:${mColor}0D;border:1px solid ${mColor}33;border-radius:10px;padding:14px 16px;">
+        <div class="cube-section-title" style="color:${mColor};margin-bottom:8px;">M AXIS — COGNITIVE MODE</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:900;color:${mColor}">${mLabel}</div>
+          <div style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid ${mColor}55;color:${mColor};font-family:'Space Mono',monospace">${(mScore*100).toFixed(0)}%</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.75;margin-bottom:12px;">${mNarr}</div>
+        <div class="cube-section-title" style="margin-bottom:6px;">MODE SCORES</div>
+        <div class="cube-channels">${mScoreBars}</div>
+      </div>
+
+      <div>
+        <div class="cube-section-title">8-CHANNEL ACTIVATIONS</div>
+        <div class="cube-channels">
+          ${chScores.map((s,i)=>{
+            const sig = chSigTypes[i] ? ` · ${chSigTypes[i]}` : '';
+            return `<div class="channel-row">
+              <div class="ch-id">${CH_KEYS[i]}</div>
+              <div class="ch-bar-wrap"><div class="ch-bar" style="width:${Math.min(s*100,100).toFixed(0)}%;background:${CH_COLORS[i]}"></div></div>
+              <div class="ch-label" style="width:80px;font-size:8px">${L.chLabels[i]}${sig}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+
+  // ════════════════════════════════════════════
+  // VOICE INPUT — Web Speech API
+  // ════════════════════════════════════════════
+  let _recognition = null;
+  let _isRecording = false;
+  let _timerIv = null;
+  let _recSecs = 0;
+  let _voiceLang = 'ko-KR';
+
+  function setVoiceLang(lang) {
+    _voiceLang = lang;
+    document.getElementById('vLangKo').style.background = lang==='ko-KR' ? '#00E5FF18' : 'var(--dim)';
+    document.getElementById('vLangKo').style.color      = lang==='ko-KR' ? '#00E5FF'   : 'var(--muted)';
+    document.getElementById('vLangEn').style.background = lang==='en-US' ? '#00E5FF18' : 'var(--dim)';
+    document.getElementById('vLangEn').style.color      = lang==='en-US' ? '#00E5FF'   : 'var(--muted)';
+  }
+
+  function toggleMic() {
+    if (_isRecording) stopVoice(); else startVoice();
+  }
+
+  function startVoice() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      alert('음성 인식은 Chrome 브라우저에서 지원됩니다.\nVoice recognition requires Chrome.');
+      return;
+    }
+    _recognition = new SR();
+    _recognition.lang = _voiceLang;
+    _recognition.continuous = true;
+    _recognition.interimResults = true;
+
+    _recognition.onstart = () => {
+      _isRecording = true;
+      setMicUI('recording');
+      // 타이머
+      _recSecs = 0;
+      _timerIv = setInterval(() => {
+        _recSecs++;
+        const m = String(Math.floor(_recSecs/60)).padStart(2,'0');
+        const s = String(_recSecs%60).padStart(2,'0');
+        const timerEl = document.getElementById('recTimer');
+        if(timerEl) timerEl.textContent = '● ' + m + ':' + s;
+        document.getElementById('f_duration').value = _recSecs * 1000;
+      }, 1000);
+    };
+
+    _recognition.onresult = (e) => {
+      let text = '';
+      for(let i = e.resultIndex; i < e.results.length; i++) {
+        text += e.results[i][0].transcript;
+      }
+      const sttEl = document.getElementById('sttDisplay');
+      const hiddenEl = document.getElementById('f_content');
+      if(sttEl) { sttEl.textContent = text; sttEl.style.color = 'var(--text)'; }
+      if(hiddenEl) hiddenEl.value = text;
+      // CH2 필드도 업데이트
+      const ch2el = document.getElementById('ch_audio');
+      if(ch2el && text) ch2el.value = (currentLang==='ko' ? '음성(STT): ' : 'Voice(STT): ') + text.slice(0,80);
+    };
+
+    _recognition.onerror = (e) => {
+      if(e.error === 'not-allowed') alert('마이크 접근 권한이 필요합니다.\nMicrophone permission required.');
+      stopVoice();
+    };
+    _recognition.onend = () => { if(_isRecording) stopVoice(); };
+    _recognition.start();
+  }
+
+  function stopVoice() {
+    _isRecording = false;
+    if(_recognition) { try{ _recognition.stop(); }catch(e){} }
+    clearInterval(_timerIv);
+    const timerEl = document.getElementById('recTimer');
+    if(timerEl) timerEl.textContent = '';
+    setMicUI('idle');
+    const statusEl = document.getElementById('micStatus');
+    const hiddenEl = document.getElementById('f_content');
+    if(statusEl) {
+      if(hiddenEl && hiddenEl.value) {
+        statusEl.textContent = currentLang==='ko' ? '✅ 인식 완료 — CUBE 빌드 가능' : '✅ Done — Ready to BUILD CUBE';
+        statusEl.style.color = '#76FF03';
+      }
+    }
+  }
+
+  function setMicUI(state) {
+    const btn = document.getElementById('micBtn');
+    const wf  = document.getElementById('voiceWaveform');
+    const st  = document.getElementById('micStatus');
+    if(!btn) return;
+    if(state === 'recording') {
+      btn.textContent = '⏹️';
+      btn.classList.add('recording');
+      if(wf) wf.classList.add('recording');
+      if(st) { st.textContent = currentLang==='ko' ? '● 녹음 중 — 클릭하여 중지' : '● Recording — click to stop'; st.style.color = '#FF4444'; }
+    } else {
+      btn.textContent = '🎙️';
+      btn.classList.remove('recording');
+      if(wf) wf.classList.remove('recording');
+      if(st && st.style.color !== 'rgb(118, 255, 3)') {
+        st.textContent = currentLang==='ko' ? '클릭하여 음성 입력 시작' : 'Click to start recording';
+        st.style.color = 'var(--muted)';
+      }
+    }
+  }
+  // ════════════════════════════════════════════
+
+
+  // ════════════════════════════════════════════
+  // SEU GUIDE — SOURCE TYPE별 백서 기반 안내
+  // ════════════════════════════════════════════
+  const SEU_GUIDE = {
+    ko: {
+      intro: `SEU(Semantic Event Unit)는 <strong style="color:#00E5FF">0.8~1.5초</strong> 시간 창 안에 묶이는 <strong style="color:#00E5FF">멀티채널 신호 클러스터</strong>입니다.
+              SOURCE TYPE은 그 SEU 안에서 <em>어느 채널이 주도 신호(Primary Channel)인지</em>를 선언하며,
+              Cube의 <strong>T·C·I·E·M 축 추출 방식</strong>과 <strong>8채널 활성화 가중치</strong>가 함께 바뀝니다.`,
+      types: [
+        { value:'audio',  color:'#00E5FF', icon:'🎙️', label:'VOICE',
+          primary:'CH2 주도', secondary:'E-Axis: 음성 톤 기반 감정 추출 / I-Axis: 발화 의미·의도 분석',
+          hint:'마이크 직접 입력 → STT 자동 변환. 음성 톤에서 감정·의도가 가장 정밀하게 추출됩니다.' },
+        { value:'text',   color:'#76FF03', icon:'📝', label:'TEXT',
+          primary:'CH5 주도', secondary:'I-Axis: 텍스트 의미 분석 / C-Axis: 언어 맥락 구성',
+          hint:'직접 텍스트 입력. 명시적 언어 정보로 의도(I-Axis) 정밀도가 높아집니다.' },
+        { value:'vision', color:'#FFD740', icon:'👁️', label:'VISION',
+          primary:'CH1 주도', secondary:'C-Axis: 시각 장면 중심 맥락 재편 / E-Axis: 미세표정 감지',
+          hint:'시각 장면 묘사 입력. C-Axis 상황 이해와 E-Axis 감정의 시각 기반 추출이 강화됩니다.' },
+        { value:'sensor', color:'#FF6D00', icon:'📡', label:'SENSOR',
+          primary:'CH3·CH8 주도', secondary:'T-Axis: 시공간 정밀도 강화 / C-Axis: 환경 기반 맥락',
+          hint:'센서 데이터 기술 입력. T-Axis 시공간 앵커와 CH8 환경 속성 정밀도가 높아집니다.' },
+      ],
+      duration: 'DURATION은 SEU 시간 창(ms)입니다. 백서 기준 권장값: <strong style="color:#00E5FF">800~1500ms</strong>. 음성 입력 시 자동 측정됩니다.'
+    },
+    en: {
+      intro: `An SEU (Semantic Event Unit) is a <strong style="color:#00E5FF">0.8–1.5 second</strong> time-bounded <strong style="color:#00E5FF">multimodal signal cluster</strong>.
+              SOURCE TYPE declares <em>which channel acts as the primary signal</em> within that SEU window —
+              reshaping both the <strong>T·C·I·E·M axis extraction</strong> and the <strong>8-channel activation weights</strong>.`,
+      types: [
+        { value:'audio',  color:'#00E5FF', icon:'🎙️', label:'VOICE',
+          primary:'CH2 primary', secondary:'E-Axis: voice-tone emotion / I-Axis: speech semantics & intent',
+          hint:'Live mic → auto STT. Highest precision for emotion and intent extraction from vocal signals.' },
+        { value:'text',   color:'#76FF03', icon:'📝', label:'TEXT',
+          primary:'CH5 primary', secondary:'I-Axis: text semantic analysis / C-Axis: linguistic context',
+          hint:'Type raw content directly. Explicit language increases I-Axis intent precision.' },
+        { value:'vision', color:'#FFD740', icon:'👁️', label:'VISION',
+          primary:'CH1 primary', secondary:'C-Axis: visual scene context / E-Axis: micro-expression detection',
+          hint:'Describe a visual scene. Strengthens C-Axis situational understanding and visual E-Axis.' },
+        { value:'sensor', color:'#FF6D00', icon:'📡', label:'SENSOR',
+          primary:'CH3·CH8 primary', secondary:'T-Axis: spatiotemporal precision / C-Axis: environment context',
+          hint:'Describe sensor data. Enhances T-Axis anchoring and CH8 environmental attribute fidelity.' },
+      ],
+      duration: 'DURATION is the SEU time window (ms). Recommended per white paper: <strong style="color:#00E5FF">800–1500ms</strong>. Auto-measured during voice input.'
+    }
+  };
+
+  function renderSeuGuide(lang) {
+    const el = document.getElementById('seuGuideText');
+    if(!el) return;
+    const G = SEU_GUIDE[lang] || SEU_GUIDE['ko'];
+    const currentType = document.getElementById('f_source_type')?.value || 'audio';
+
+    const typeCards = G.types.map(t => {
+      const isActive = t.value === currentType;
+      return `<div onclick="document.getElementById('f_source_type').value='${t.value}';onSourceTypeChange('${t.value}');renderSeuGuide(currentLang);"
+        style="cursor:pointer;padding:7px 10px;border-radius:6px;border:1px solid ${isActive ? t.color : 'var(--border-bright)'};
+               background:${isActive ? t.color+'12' : 'transparent'};transition:all .15s;margin-bottom:5px;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
+          <span style="font-size:12px;">${t.icon}</span>
+          <span style="font-size:10px;font-weight:700;color:${t.color};letter-spacing:1px;">${t.label}</span>
+          <span style="font-size:8px;padding:1px 6px;border-radius:3px;background:${t.color}22;color:${t.color};border:1px solid ${t.color}44;">${t.primary}</span>
+        </div>
+        <div style="font-size:9px;color:${isActive ? '#C8DCE8' : 'var(--muted)'};line-height:1.6;padding-left:19px;">
+          <span style="color:${t.color};opacity:.8;">${t.secondary}</span><br/>
+          ${t.hint}
+        </div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div style="font-size:10px;color:var(--muted);line-height:1.8;margin-bottom:10px;padding:10px 14px;
+                  background:var(--dim);border-left:2px solid #00E5FF55;border-radius:0 6px 6px 0;">
+        ${G.intro}
+      </div>
+      <div style="margin-bottom:8px;">${typeCards}</div>
+      <div style="font-size:9px;color:var(--muted);padding:6px 10px;border-radius:4px;background:var(--dim);line-height:1.7;">
+        ⏱ ${G.duration}
+      </div>`;
+  }
+  // ════════════════════════════════════════════
+
+  // ── 초기화 ──
+  applyLangUI();
+  applyPreset('morning');
+  </script>
+</section>
+
+<hr class="divider"/>
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">03</span>
+    <span class="sec-title">Full Architecture Compendium</span>
+  </div>
+  <div class="comp-block">
+    <div style="position:relative;">
+      <div class="comp-eyebrow">PDF · ALL 19 WHITE PAPERS · 260+ PAGES</div>
+      <div class="comp-title">Velsanet Architecture<br/>Compendium 2026</div>
+      <div class="comp-sub">The complete collection of all 19 white papers in a single document. Network structure · Optical hardware · AI architecture · Mathematical foundations · Identity · Path lifecycle · Governance · City-scale management · Cognition Cube System. Formally submitted to ITU-T SG13 for IMT-2030.</div>
+    </div>
+    <a href="Velsanet_Architecture_Compendium_260222_.pdf" class="btn-dl" target="_blank">↓ DOWNLOAD PDF</a>
+  </div>
+</section>
+
+<hr class="divider"/>
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">04</span>
+    <span class="sec-title">Inquiries &amp; Collaboration</span>
+  </div>
+  <div class="contact-block">
+    <div class="contact-left">
+      <div class="contact-eyebrow">RESEARCH · PARTNERSHIP · INVESTMENT</div>
+      <div class="contact-title">Shape the Future<br/>of Network Architecture</div>
+      <div class="contact-desc">
+        Velsanet is an open architectural initiative.<br/>
+        We welcome inquiries from researchers, engineers, investors,
+        and institutions interested in topology-first, AI-native networking,
+        6G standardization, and next-generation infrastructure.
+      </div>
+      <div class="contact-items">
+        <div class="contact-item"><span class="ci-dot" style="background:#00E5FF"></span>Academic &amp; Research Collaboration</div>
+        <div class="contact-item"><span class="ci-dot" style="background:#76FF03"></span>Industry Partnership &amp; Licensing</div>
+        <div class="contact-item"><span class="ci-dot" style="background:#FFD740"></span>Investment &amp; Funding Inquiry</div>
+        <div class="contact-item"><span class="ci-dot" style="background:#E040FB"></span>ITU-T / Standards Body Engagement</div>
+      </div>
+    </div>
+    <div class="contact-right">
+      <div class="form-card">
+        <div class="form-card-title">Send an Inquiry</div>
+        <div class="form-card-sub">Questions, proposals, and collaboration requests welcome.</div>
+        <a href="https://docs.google.com/forms/d/1A5PRZBlm9Upeih53A-Y3m4W4Q5CynRAlqorsnwe3d1o/edit?pli=1" class="btn-form" target="_blank">
+          <span>Open Inquiry Form</span>
+          <span class="btn-arrow">↗</span>
+        </a>
+        <div class="form-note">Google Forms · Responses reviewed by the Velsanet Architecture Group</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+<footer>
+  <div class="footer-brand">VELSANET</div>
+  <div class="footer-links">
+    <a href="https://velsanet-whitepapers.onrender.com/docs" class="footer-link" target="_blank">LIVE API</a>
+    <a href="https://github.com/joa337/velsanet-whitepapers" class="footer-link" target="_blank">GITHUB</a>
+    <a href="Velsanet_Architecture_Compendium_260222_.pdf" class="footer-link" target="_blank">COMPENDIUM</a>
+    <a href="polyhedra.html" class="footer-link">POLYHEDRA</a>
+    <a href="dikwei.html" class="footer-link">DIKWEI</a>
+    <a href="governance.html" class="footer-link">GOVERNANCE</a>
+    <a href="moct.html" class="footer-link">MOCT</a>
+    <a href="ko.html" class="footer-link">CUBE KO</a>
+    <a href="en.html" class="footer-link">CUBE EN</a>
+    <a href="pai_lifelong_lifecycle.html" class="footer-link">PAI KO</a>
+    <a href="pai_lifelong_lifecycle_en.html" class="footer-link">PAI EN</a>
+    <a href="whitepapers/WP19_Cognition_Cube_System/Velsanet%20Cognition%20Cube%20System%20White%20Paper%20%2319(v1.0_260224).pdf" class="footer-link" target="_blank">WP19</a>
+  </div>
+  <div class="footer-copy">VELSANET RESEARCH LAB · REPUBLIC OF KOREA · 2026</div>
+</footer>
+
+</body>
+</html>
