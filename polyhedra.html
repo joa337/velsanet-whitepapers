@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Polyhedral Topology — Velsanet</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#03070C; --surface:#060C14; --border:#0D1A26; --dim:#0A1420;
+  --text:#C5DCF0; --muted:#2E4458;
+
+  /* WP Figure 3.1b 기준 색상 */
+  --T4:#00E5FF;   /* Cyan   — Tetrahedron  · Node_4  */
+  --H6:#D4AC0D;   /* Yellow — Hexahedron   · Node_6  (WP: Yellow, RAN Microcell) */
+  --O8:#1565C0;   /* Blue   — Octahedron   · Node_8  */
+  --D12:#2E7D32;  /* Green  — Dodecahedron · Node_12 */
+  --I20:#6A1B9A;  /* Violet — Icosahedron  · Node_20 */
+
+  --T4b:#00E5FF22; --H6b:#D4AC0D22; --O8b:#1565C022; --D12b:#2E7D3222; --I20b:#6A1B9A22;
+
+  /* 자율구간 / 지능구간 경계 */
+  --auto-col: #f87171;
+  --intel-col: #4ade80;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;overflow-x:hidden;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:52px 52px;opacity:.3;pointer-events:none;z-index:0;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(3,7,12,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 48px;display:flex;justify-content:space-between;align-items:center;}
+.nav-brand{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:900;letter-spacing:4px;color:var(--text);text-decoration:none;}
+.nav-brand span{color:var(--T4);}
+.nav-back{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.nav-back:hover{color:var(--T4);}
+
+/* 자율/지능 구간 배너 */
+.zone-banner{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
+.zone-pill{border-radius:8px;padding:12px 20px;display:flex;align-items:center;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;}
+.zone-pill.auto{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.25);color:var(--auto-col);}
+.zone-pill.intel{background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.25);color:var(--intel-col);}
+.zone-icon{font-size:18px;}
+.zone-title{font-weight:700;letter-spacing:3px;font-size:10px;}
+.zone-desc{font-size:9px;opacity:.7;margin-top:2px;letter-spacing:1px;}
+.zone-nodes{display:flex;gap:6px;margin-top:6px;}
+.zone-node{padding:2px 8px;border-radius:3px;font-size:9px;letter-spacing:1px;border:1px solid;}
+
+/* HERO */
+.hero{position:relative;z-index:1;padding:130px 60px 40px;max-width:1200px;margin:0 auto;}
+.hero-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:5px;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+.hero-label::before{content:'';width:32px;height:1px;background:var(--muted);}
+.hero-title{font-family:'Orbitron',sans-serif;font-size:clamp(32px,6vw,72px);font-weight:900;line-height:1;letter-spacing:2px;margin-bottom:20px;}
+.hero-title .accent{color:var(--T4);}
+.hero-sub{font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:var(--muted);max-width:620px;line-height:1.85;border-left:2px solid var(--border);padding-left:18px;}
+
+/* EXPLORER */
+.explorer{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:20px 60px 60px;}
+
+/* Tab selector */
+.poly-tabs{display:flex;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:32px;}
+.poly-tab{flex:1;padding:16px 8px;text-align:center;cursor:pointer;transition:all .2s;border-right:1px solid var(--border);position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.poly-tab:last-child{border-right:none;}
+.poly-tab-icon{font-size:22px;line-height:1;}
+.poly-tab-name{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;}
+.poly-tab-sub{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--muted);}
+.poly-tab-zone{font-family:'IBM Plex Mono',monospace;font-size:7.5px;letter-spacing:1px;padding:1px 5px;border-radius:2px;margin-top:2px;}
+.poly-tab-zone.auto{background:rgba(248,113,113,.12);color:var(--auto-col);border:1px solid rgba(248,113,113,.2);}
+.poly-tab-zone.intel{background:rgba(74,222,128,.12);color:var(--intel-col);border:1px solid rgba(74,222,128,.2);}
+.poly-tab::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--tc,var(--T4));opacity:0;transition:opacity .2s;}
+.poly-tab.active::after{opacity:1;}
+.poly-tab.active{background:var(--dim);}
+.poly-tab.active .poly-tab-name{color:var(--tc,var(--T4));}
+.poly-tab:hover:not(.active){background:rgba(255,255,255,.02);}
+
+/* Main panel */
+.poly-panel{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;}
+
+/* Left: visual */
+.poly-visual{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;display:flex;flex-direction:column;align-items:center;gap:20px;position:relative;overflow:hidden;}
+.poly-visual::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 50%,var(--glow,rgba(0,229,255,.04)),transparent 70%);}
+
+/* Zone badge inside visual */
+.zone-badge-inline{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;padding:5px 14px;border-radius:20px;text-align:center;width:100%;}
+.zone-badge-inline.auto{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);color:var(--auto-col);}
+.zone-badge-inline.intel{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.3);color:var(--intel-col);}
+
+.poly-svg-wrap{width:220px;height:220px;position:relative;}
+.poly-svg-wrap svg{width:100%;height:100%;}
+
+.poly-name-big{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;letter-spacing:3px;text-align:center;line-height:1;}
+.poly-formula{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--muted);text-align:center;margin-top:4px;}
+
+/* Stats row */
+.poly-stats{display:flex;gap:0;width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.poly-stat{flex:1;padding:12px 8px;text-align:center;border-right:1px solid var(--border);}
+.poly-stat:last-child{border-right:none;}
+.ps-val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;line-height:1;}
+.ps-key{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);margin-top:4px;}
+
+/* E2E badge */
+.e2e-badge{background:var(--bg);border-radius:8px;padding:16px 18px;text-align:center;width:100%;}
+.e2e-badge.auto-e2e{border:1px solid rgba(248,113,113,.4);}
+.e2e-badge.intel-e2e{border:1px solid var(--tc,var(--O8));}
+.e2e-num{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;line-height:1;}
+.e2e-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:4px;}
+.e2e-restrict{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:1px;color:var(--auto-col);margin-top:6px;}
+
+/* Right: info */
+.poly-info{display:flex;flex-direction:column;gap:16px;}
+.pi-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px;border-top:3px solid var(--tc,var(--T4));}
+.pi-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:4px;color:var(--muted);margin-bottom:10px;}
+.pi-title{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;}
+.pi-text{font-size:12px;color:var(--muted);line-height:1.85;}
+.pi-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:2px;padding:3px 9px;border-radius:3px;border:1px solid;margin-top:10px;margin-right:5px;}
+.pi-tag.warn{background:rgba(248,113,113,.1);color:var(--auto-col);border-color:rgba(248,113,113,.4);}
+.pi-tag.good{background:rgba(74,222,128,.1);color:var(--intel-col);border-color:rgba(74,222,128,.4);}
+.pi-row{display:flex;gap:12px;align-items:flex-start;font-size:12px;color:var(--muted);line-height:1.7;margin-top:8px;}
+.pi-row-key{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;min-width:90px;padding-top:2px;flex-shrink:0;}
+
+/* Face role section */
+.face-roles{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.fr-chip{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;padding:4px 10px;border-radius:3px;border:1px solid;}
+
+/* Color swatch */
+.color-chip{width:100%;height:5px;border-radius:3px;opacity:.7;}
+
+/* COMPARISON TABLE */
+.compare-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 80px;}
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:5px;color:var(--muted);margin-bottom:28px;display:flex;align-items:center;gap:14px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.compare-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.compare-table th{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);padding:14px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--dim);}
+.compare-table td{font-size:12px;color:var(--muted);padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-table tr:hover td{background:var(--dim);}
+.td-poly{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;}
+.td-dot{width:10px;height:10px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:5px;}
+.td-auto{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--auto-col);letter-spacing:1px;}
+.td-intel{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--intel-col);letter-spacing:1px;}
+/* zone row shading */
+.row-auto td{background:rgba(248,113,113,.025);}
+.row-intel td{background:rgba(74,222,128,.02);}
+
+/* GRAMMAR FLOW */
+.grammar-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 60px 80px;}
+.grammar-flow{display:flex;align-items:stretch;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.gf-node{flex:1;padding:24px 14px;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.gf-node::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--muted);z-index:2;}
+.gf-node:last-child::after{display:none;}
+.gf-icon{font-size:22px;margin-bottom:4px;}
+.gf-name{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;}
+.gf-role{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--muted);line-height:1.6;margin-top:2px;}
+.gf-zone{font-family:'IBM Plex Mono',monospace;font-size:7.5px;letter-spacing:1px;padding:2px 7px;border-radius:2px;margin-top:6px;}
+.gf-zone.auto{background:rgba(248,113,113,.1);color:var(--auto-col);border:1px solid rgba(248,113,113,.25);}
+.gf-zone.intel{background:rgba(74,222,128,.1);color:var(--intel-col);border:1px solid rgba(74,222,128,.25);}
+
+/* Zone divider in grammar flow */
+.gf-divider{display:flex;flex-direction:column;align-items:center;justify-content:center;width:2px;background:linear-gradient(to bottom,var(--auto-col),var(--intel-col));opacity:.35;flex-shrink:0;position:relative;}
+
+/* Footer */
+.page-footer{position:relative;z-index:1;border-top:1px solid var(--border);max-width:1200px;margin:0 auto;padding:32px 60px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
+.footer-left{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);}
+.footer-links{display:flex;gap:20px;}
+.footer-link{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.footer-link:hover{color:var(--T4);}
+
+@media(max-width:768px){
+  .hero,.explorer,.compare-section,.grammar-section,.zone-banner{padding-left:24px;padding-right:24px;}
+  .poly-panel{grid-template-columns:1fr;}
+  .poly-tabs{flex-wrap:wrap;}
+  .poly-tab{min-width:33%;}
+  .grammar-flow{flex-direction:column;}
+  .gf-node::after{content:'↓';right:auto;bottom:-10px;top:auto;transform:none;left:50%;}
+  .page-footer{padding:24px;}
+  .zone-banner{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">VELSA<span>NET</span></a>
+  <a href="index.html" class="nav-back">← BACK TO HOME</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-label">WHITE PAPER #01 · #05 · SPATIAL GENESIS · TOPOLOGY-FIRST</div>
+  <h1 class="hero-title">
+    POLYHEDRAL<br/><span class="accent">TOPOLOGY</span><br/>EXPLORER
+  </h1>
+  <p class="hero-sub">
+    Velsanet defines network space through five polyhedral primitives.
+    T₄ and H₆ operate as <span style="color:var(--auto-col)">autonomous zones</span> — single E2E, no intelligence assigned.
+    From O₈ upward, <span style="color:var(--intel-col)">intelligence is granted</span> and parallel E2E becomes possible.
+    Topology exists before coordinates.
+  </p>
+</section>
+
+<!-- 자율구간 / 지능구간 배너 -->
+<div class="zone-banner">
+  <div class="zone-pill auto">
+    <div class="zone-icon">⚙</div>
+    <div>
+      <div class="zone-title">AUTONOMOUS ZONE — 자율 구간</div>
+      <div class="zone-desc">단일 E2E 전용 · 병렬 E2E 불가 · 지능 미부여</div>
+      <div class="zone-nodes">
+        <span class="zone-node" style="color:var(--T4);border-color:var(--T4);background:var(--T4b)">T₄ · Node_4</span>
+        <span class="zone-node" style="color:var(--H6);border-color:var(--H6);background:var(--H6b)">H₆ · Node_6</span>
+      </div>
+    </div>
+  </div>
+  <div class="zone-pill intel">
+    <div class="zone-icon">◈</div>
+    <div>
+      <div class="zone-title">INTELLIGENCE ZONE — 지능 구간</div>
+      <div class="zone-desc">지능 부여 · 병렬 E2E 가능 · PAI / AAI / AsAI</div>
+      <div class="zone-nodes">
+        <span class="zone-node" style="color:var(--O8);border-color:var(--O8);background:var(--O8b)">O₈ · Node_8</span>
+        <span class="zone-node" style="color:var(--D12);border-color:var(--D12);background:var(--D12b)">D₁₂ · Node_12</span>
+        <span class="zone-node" style="color:var(--I20);border-color:var(--I20);background:var(--I20b)">I₂₀ · Node_20</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="explorer">
+  <!-- TABS -->
+  <div class="poly-tabs" id="polyTabs">
+    <div class="poly-tab active" style="--tc:var(--T4)" onclick="selectPoly(0)">
+      <div class="poly-tab-icon">△</div>
+      <div class="poly-tab-name" style="color:var(--T4)">T₄</div>
+      <div class="poly-tab-sub">TETRAHEDRON</div>
+      <div class="poly-tab-zone auto">자율구간</div>
+    </div>
+    <div class="poly-tab" style="--tc:var(--H6)" onclick="selectPoly(1)">
+      <div class="poly-tab-icon">⬜</div>
+      <div class="poly-tab-name">H₆</div>
+      <div class="poly-tab-sub">HEXAHEDRON</div>
+      <div class="poly-tab-zone auto">자율구간</div>
+    </div>
+    <div class="poly-tab" style="--tc:var(--O8)" onclick="selectPoly(2)">
+      <div class="poly-tab-icon">◈</div>
+      <div class="poly-tab-name">O₈</div>
+      <div class="poly-tab-sub">OCTAHEDRON</div>
+      <div class="poly-tab-zone intel">지능구간 시작</div>
+    </div>
+    <div class="poly-tab" style="--tc:var(--D12)" onclick="selectPoly(3)">
+      <div class="poly-tab-icon">⬟</div>
+      <div class="poly-tab-name">D₁₂</div>
+      <div class="poly-tab-sub">DODECAHEDRON</div>
+      <div class="poly-tab-zone intel">지능구간</div>
+    </div>
+    <div class="poly-tab" style="--tc:var(--I20)" onclick="selectPoly(4)">
+      <div class="poly-tab-icon">✦</div>
+      <div class="poly-tab-name">I₂₀</div>
+      <div class="poly-tab-sub">ICOSAHEDRON</div>
+      <div class="poly-tab-zone intel">지능구간</div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div class="poly-panel" id="polyPanel">
+    <!-- filled by JS -->
+  </div>
+</section>
+
+<!-- GRAMMAR FLOW -->
+<section class="grammar-section">
+  <div class="sec-label">THE FIVE POLYHEDRA AS NETWORK GRAMMAR</div>
+  <div class="grammar-flow">
+    <div class="gf-node" style="border-top:2px solid var(--T4)">
+      <div class="gf-icon" style="color:var(--T4)">△</div>
+      <div class="gf-name" style="color:var(--T4)">T₄</div>
+      <div class="gf-role">Access<br/>Emergence<br/>Origin</div>
+      <div class="gf-zone auto">자율 · 단일E2E</div>
+    </div>
+    <div class="gf-node" style="border-top:2px solid var(--H6)">
+      <div class="gf-icon" style="color:var(--H6)">⬜</div>
+      <div class="gf-name" style="color:var(--H6)">H₆</div>
+      <div class="gf-role">RAN Microcell<br/>Node_5/6/7<br/>Channel Align</div>
+      <div class="gf-zone auto">자율 · 단일E2E</div>
+    </div>
+    <!-- 경계 구분선 -->
+    <div style="width:3px;background:linear-gradient(to bottom,var(--auto-col)40,var(--intel-col)40);opacity:.4;flex-shrink:0;position:relative;">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:2px;white-space:nowrap;color:#888;">INTELLIGENCE BOUNDARY</div>
+    </div>
+    <div class="gf-node" style="border-top:2px solid var(--O8)">
+      <div class="gf-icon" style="color:var(--O8)">◈</div>
+      <div class="gf-name" style="color:var(--O8)">O₈</div>
+      <div class="gf-role">PAI Host<br/>City Layer<br/>E2E Domain</div>
+      <div class="gf-zone intel">지능 시작 · 병렬E2E</div>
+    </div>
+    <div class="gf-node" style="border-top:2px solid var(--D12)">
+      <div class="gf-icon" style="color:var(--D12)">⬟</div>
+      <div class="gf-name" style="color:var(--D12)">D₁₂</div>
+      <div class="gf-role">AAI Mediation<br/>Expansion<br/>Region</div>
+      <div class="gf-zone intel">지능 · 병렬E2E</div>
+    </div>
+    <div class="gf-node" style="border-top:2px solid var(--I20)">
+      <div class="gf-icon" style="color:var(--I20)">✦</div>
+      <div class="gf-name" style="color:var(--I20)">I₂₀</div>
+      <div class="gf-role">Global Balance<br/>Governance<br/>AsAI · Sovereign</div>
+      <div class="gf-zone intel">지능 · 병렬E2E</div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE TABLE -->
+<section class="compare-section">
+  <div class="sec-label">STRUCTURAL COMPARISON</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>POLYHEDRON</th>
+        <th>NODE</th>
+        <th>FACES</th>
+        <th>FACE PAIRS</th>
+        <th>SWITCHING SURFACES (×8)</th>
+        <th>E2E MODE</th>
+        <th>STRUCTURAL ROLE</th>
+        <th>AI LAYER</th>
+        <th>COLOR</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-auto">
+        <td><span class="td-poly" style="color:var(--T4)">T₄</span></td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--T4)">Node_4</span></td>
+        <td>4</td>
+        <td>6</td>
+        <td>48</td>
+        <td><span class="td-auto">단일 E2E<br/>병렬 불가</span></td>
+        <td>Access emergence · signal origin</td>
+        <td>PAI seed</td>
+        <td><span class="td-dot" style="background:var(--T4)"></span>Cyan</td>
+      </tr>
+      <tr class="row-auto">
+        <td><span class="td-poly" style="color:var(--H6)">H₆</span></td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--H6)">Node_5<br/>Node_6 ×4<br/>Node_7</span></td>
+        <td>6</td>
+        <td>15</td>
+        <td>120</td>
+        <td><span class="td-auto">단일 E2E<br/>병렬 불가</span></td>
+        <td>RAN Microcell · wired-wireless convergence</td>
+        <td>자율 구간<br/>(지능 미부여)</td>
+        <td><span class="td-dot" style="background:var(--H6)"></span>Yellow</td>
+      </tr>
+      <tr class="row-intel">
+        <td><span class="td-poly" style="color:var(--O8)">O₈</span></td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--O8)">Node_8</span></td>
+        <td>8</td>
+        <td>28</td>
+        <td>224</td>
+        <td><span class="td-intel">병렬 E2E ✓<br/>지능구간 시작</span></td>
+        <td>Local parallel E2E domain · PAI host</td>
+        <td>PAI (Personal AI)</td>
+        <td><span class="td-dot" style="background:var(--O8)"></span>Blue</td>
+      </tr>
+      <tr class="row-intel">
+        <td><span class="td-poly" style="color:var(--D12)">D₁₂</span></td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--D12)">Node_12</span></td>
+        <td>12</td>
+        <td>66</td>
+        <td>528</td>
+        <td><span class="td-intel">병렬 E2E ✓</span></td>
+        <td>Mediation · expansion control</td>
+        <td>AAI (Agent AI)</td>
+        <td><span class="td-dot" style="background:var(--D12)"></span>Green</td>
+      </tr>
+      <tr class="row-intel">
+        <td><span class="td-poly" style="color:var(--I20)">I₂₀</span></td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--I20)">Node_20</span></td>
+        <td>20</td>
+        <td>190</td>
+        <td>1,520</td>
+        <td><span class="td-intel">병렬 E2E ✓</span></td>
+        <td>Global balance · governance</td>
+        <td>AsAI (Assistant AI)</td>
+        <td><span class="td-dot" style="background:var(--I20)"></span>Violet</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<footer class="page-footer">
+  <div class="footer-left">VELSANET · WHITE PAPER #01 · #05 · POLYHEDRAL TOPOLOGY</div>
+  <div class="footer-links">
+    <a href="index.html" class="footer-link">HOME</a>
+    <a href="dikwei.html" class="footer-link">DIKWEI</a>
+    <a href="en.html" class="footer-link">CUBE</a>
+  </div>
+</footer>
+
+<script>
+const polys = [
+  {
+    id:'T4', name:'Tetrahedron', formula:'T₄',
+    color:'#00E5FF', colorb:'rgba(0,229,255,.15)',
+    colorName:'Deep Cyan', nodeNum:'Node_4',
+    zone:'auto', zoneLabel:'자율 구간 — 단일 E2E 전용',
+    glow:'rgba(0,229,255,.06)',
+    faces:4, edges:6, vertices:4, facePairs:6, switchSurfaces:48,
+    icon:'△',
+    role:'Access Emergence & Initiation',
+    aiLayer:'지능 미부여 · PAI 연결 대상',
+    desc:'T₄는 Velsanet 공간의 최소 폴리헤드럴 형태 — 구조적 기원점. 모든 사용자 디바이스, 센서, 신호 발생원이 T₄ 구조 역할에 매핑된다. T₄ 없이는 토폴로지가 시작되지 않는다. <strong style="color:#f87171">자율 구간으로 지능이 부여되지 않으며 단일 E2E만 지원한다.</strong>',
+    faceRoles:[
+      {label:'4 faces', desc:'H6와 연결되는 Node_5 링크 대상', color:'#66dd66'}
+    ],
+    details:[
+      {k:'NETWORK ROLE', v:'무선·유선 액세스 진입점 · 최소 구조 단위'},
+      {k:'E2E MODE', v:'단일 E2E 전용 — 병렬 E2E 불가 (자율 구간)'},
+      {k:'FACE PAIRS', v:'C(4,2) = 6 face pairs · ×8 layers = 48 switching surfaces'},
+      {k:'SECURITY', v:'제조 시점에 Identity 프로비저닝 — 구조적으로 고정'},
+      {k:'LINK TO H6', v:'Node_5 링크(H6↔T4 수직 링크) 통해 H6로 연결'},
+    ],
+    svgPath:`<polygon points="110,30 30,190 190,190" fill="none" stroke="#00E5FF" stroke-width="2" opacity="0.8"/>
+    <line x1="110" y1="30" x2="110" y2="190" stroke="#00E5FF" stroke-width="1" opacity="0.3" stroke-dasharray="4,4"/>
+    <circle cx="110" cy="30" r="5" fill="#00E5FF" opacity="0.9"/>
+    <circle cx="30" cy="190" r="5" fill="#00E5FF" opacity="0.9"/>
+    <circle cx="190" cy="190" r="5" fill="#00E5FF" opacity="0.9"/>
+    <text x="110" y="120" text-anchor="middle" fill="#00E5FF" font-family="Orbitron" font-size="13" opacity="0.4">T₄</text>`
+  },
+  {
+    id:'H6', name:'Hexahedron', formula:'H₆',
+    color:'#D4AC0D', colorb:'rgba(212,172,13,.15)',
+    colorName:'Yellow — RAN Microcell', nodeNum:'Node_6',
+    zone:'auto', zoneLabel:'자율 구간 — 단일 E2E 전용',
+    glow:'rgba(212,172,13,.05)',
+    faces:6, edges:12, vertices:8, facePairs:15, switchSurfaces:120,
+    icon:'⬜',
+    role:'RAN Microcell · 수직·수평 링크 구조',
+    aiLayer:'지능 미부여 · 자율 구간',
+    desc:'H₆(Hexahedron)는 6면 중 면의 역할이 3종으로 분화된다. <strong style="color:#D4AC0D">Node_5(1면)</strong>은 H6↔T4 수직 링크, <strong style="color:#D4AC0D">Node_6(4면)</strong>은 H6↔H6 수평 링크, <strong style="color:#D4AC0D">Node_7(1면)</strong>은 H6↔O8 수직 링크. <strong style="color:#f87171">자율 구간으로 단일 E2E만 지원하며 병렬 E2E는 O8부터 가능하다.</strong>',
+    faceRoles:[
+      {label:'Node_5 × 1면', desc:'H6↔T4 수직링크 · 20 cores · 번호5=4와6사이', color:'#66dd66'},
+      {label:'Node_6 × 4면', desc:'H6↔H6 수평링크 · 단일E2E', color:'#D4AC0D'},
+      {label:'Node_7 × 1면', desc:'H6↔O8 수직링크 · 112 cores · 번호7=6과8사이', color:'#ff8833'},
+    ],
+    details:[
+      {k:'FACE 구성', v:'Node_5(T4링크)×1 + Node_6(H6수평)×4 + Node_7(O8링크)×1 = 6면'},
+      {k:'E2E MODE', v:'단일 E2E 전용 — 병렬 E2E 불가 (자율 구간)'},
+      {k:'광코어', v:'Node_5: 20 cores · H6 total: 32 cores · Node_7: 112 cores'},
+      {k:'NODE_7 경계', v:'Node_7 면 너머 O8부터 지능 부여 → 병렬 E2E 시작'},
+      {k:'색상', v:'Yellow · WP Figure 3.1b 기준 · RAN-Based Microcell'},
+    ],
+    svgPath:`<rect x="55" y="60" width="110" height="100" fill="none" stroke="#D4AC0D" stroke-width="2" opacity="0.8"/>
+    <rect x="75" y="40" width="110" height="100" fill="none" stroke="#D4AC0D" stroke-width="1.5" opacity="0.5"/>
+    <line x1="55" y1="60" x2="75" y2="40" stroke="#D4AC0D" stroke-width="1" opacity="0.5"/>
+    <line x1="165" y1="60" x2="185" y2="40" stroke="#D4AC0D" stroke-width="1" opacity="0.5"/>
+    <line x1="55" y1="160" x2="75" y2="140" stroke="#D4AC0D" stroke-width="1" opacity="0.5"/>
+    <line x1="165" y1="160" x2="185" y2="140" stroke="#D4AC0D" stroke-width="1" opacity="0.5"/>
+    <text x="115" y="118" text-anchor="middle" fill="#D4AC0D" font-family="Orbitron" font-size="13" opacity="0.4">H₆</text>`
+  },
+  {
+    id:'O8', name:'Octahedron', formula:'O₈',
+    color:'#1E88E5', colorb:'rgba(30,136,229,.15)',
+    colorName:'Deep Azure Blue', nodeNum:'Node_8',
+    zone:'intel', zoneLabel:'지능구간 시작 — 병렬 E2E 가능',
+    glow:'rgba(30,136,229,.07)',
+    faces:8, edges:12, vertices:6, facePairs:28, switchSurfaces:224,
+    icon:'◈',
+    role:'지능구간 시작 · 병렬 E2E 도메인',
+    aiLayer:'PAI — Personal AI (Node_8)',
+    desc:'O₈는 Velsanet에서 <strong style="color:#4ade80">지능이 처음 부여되는 계층</strong> — 병렬 E2E가 시작되는 경계점. PAI(Personal AI)를 호스팅하고 Cube 메모리(384 광코어)를 보유한다. H6의 Node_7 수직 링크 너머가 바로 O8이며, 이 시점부터 병렬 E2E, 시냅스 강화·약화, 자율적 E2E 생성이 가능해진다.',
+    faceRoles:[
+      {label:'28 face pairs', desc:'병렬 E2E × 8 layers 모두 지원', color:'#1E88E5'},
+    ],
+    details:[
+      {k:'NETWORK ROLE', v:'도시 액세스 레이어 · 로컬 E2E 도메인 · PAI 인지 호스트'},
+      {k:'E2E MODE', v:'병렬 E2E 완전 지원 — 지능구간 시작점'},
+      {k:'CUBE MEMORY', v:'외부 2면 × 192 광코어 = 384 Cube lanes'},
+      {k:'SWITCHING', v:'28 face pairs × 8 layers = 224 switching surfaces'},
+      {k:'AI STAGE', v:'DIKWEI: Data → Information (1단계 의미 추출)'},
+      {k:'경계 의미', v:'H6(자율) → Node_7링크 → O8(지능) : 병렬E2E 경계'},
+    ],
+    svgPath:`<polygon points="110,25 185,95 185,155 110,200 35,155 35,95" fill="none" stroke="#1E88E5" stroke-width="2" opacity="0.8"/>
+    <line x1="110" y1="25" x2="110" y2="200" stroke="#1E88E5" stroke-width="1" opacity="0.3" stroke-dasharray="5,5"/>
+    <line x1="35" y1="125" x2="185" y2="125" stroke="#1E88E5" stroke-width="1" opacity="0.3" stroke-dasharray="5,5"/>
+    <circle cx="110" cy="25" r="4" fill="#1E88E5"/>
+    <circle cx="110" cy="200" r="4" fill="#1E88E5"/>
+    <text x="110" y="120" text-anchor="middle" fill="#1E88E5" font-family="Orbitron" font-size="13" opacity="0.4">O₈</text>`
+  },
+  {
+    id:'D12', name:'Dodecahedron', formula:'D₁₂',
+    color:'#43A047', colorb:'rgba(67,160,71,.15)',
+    colorName:'Emerald Green', nodeNum:'Node_12',
+    zone:'intel', zoneLabel:'지능구간 — 병렬 E2E 지원',
+    glow:'rgba(67,160,71,.07)',
+    faces:12, edges:30, vertices:20, facePairs:66, switchSurfaces:528,
+    icon:'⬟',
+    role:'Mediation & Expansion Control',
+    aiLayer:'AAI — Agent AI (Node_12)',
+    desc:'D₁₂는 조정·중재 레이어 — Velsanet의 구조적 지능 허브. AAI를 호스팅하여 이질적인 PAI 인텐트를 Structured Intent Packet으로 조율한다. D₁₂↔D₁₂ 직접 연결은 중재 없이 허용되지 않는다. I₂₀ 거버넌스 계층으로의 게이트웨이.',
+    faceRoles:[
+      {label:'66 face pairs', desc:'병렬 E2E 완전 지원', color:'#43A047'},
+    ],
+    details:[
+      {k:'NETWORK ROLE', v:'지역 조정 · AAI 중재 허브 · 확장 제어'},
+      {k:'E2E MODE', v:'병렬 E2E 완전 지원'},
+      {k:'SWITCHING', v:'66 face pairs × 8 layers = 528 switching surfaces'},
+      {k:'AI STAGE', v:'DIKWEI: Information → Knowledge (구조적 인텐트 정렬)'},
+      {k:'GOVERNANCE', v:'구조적으로 정렬된 인텐트만 I₂₀로 상향 가능'},
+    ],
+    svgPath:`<polygon points="110,22 148,38 172,72 168,112 145,142 110,155 75,142 52,112 48,72 72,38" fill="none" stroke="#43A047" stroke-width="2" opacity="0.8"/>
+    <polygon points="110,55 132,65 140,88 128,108 110,115 92,108 80,88 88,65" fill="none" stroke="#43A047" stroke-width="1" opacity="0.4"/>
+    <line x1="110" y1="22" x2="110" y2="55" stroke="#43A047" stroke-width="1" opacity="0.3"/>
+    <line x1="148" y1="38" x2="132" y2="65" stroke="#43A047" stroke-width="1" opacity="0.3"/>
+    <line x1="72" y1="38" x2="88" y2="65" stroke="#43A047" stroke-width="1" opacity="0.3"/>
+    <text x="110" y="95" text-anchor="middle" fill="#43A047" font-family="Orbitron" font-size="11" opacity="0.5">D₁₂</text>`
+  },
+  {
+    id:'I20', name:'Icosahedron', formula:'I₂₀',
+    color:'#8E24AA', colorb:'rgba(142,36,170,.15)',
+    colorName:'Deep Violet', nodeNum:'Node_20',
+    zone:'intel', zoneLabel:'지능구간 — 병렬 E2E 지원',
+    glow:'rgba(142,36,170,.08)',
+    faces:20, edges:30, vertices:12, facePairs:190, switchSurfaces:1520,
+    icon:'✦',
+    role:'Global Balance & Structural Governance',
+    aiLayer:'AsAI — Assistant AI (Node_20)',
+    desc:'I₂₀는 Velsanet 구조적 계층의 정점 — 동시에 가장 구조적으로 제약된 노드. AsAI(지혜 기반 실행 계층)를 호스팅한다. 최대 권력 = 최소 자유. 직접 명령 발령은 구조적으로 금지된다. 글로벌 VELSA(Q2)와 대륙 Q3 계층이 I₂₀ 토폴로지를 통해 운영된다.',
+    faceRoles:[
+      {label:'190 face pairs', desc:'병렬 E2E 완전 지원 · 최대 규모', color:'#8E24AA'},
+    ],
+    details:[
+      {k:'NETWORK ROLE', v:'글로벌 거버넌스 · AsAI 실행 · 소버린 구조 레이어'},
+      {k:'E2E MODE', v:'병렬 E2E 완전 지원'},
+      {k:'SWITCHING', v:'190 face pairs × 8 layers = 1,520 switching surfaces'},
+      {k:'AI STAGE', v:'DIKWEI: Knowledge → Wisdom → Execution (맥락적 판단)'},
+      {k:'GOVERNING', v:'최강의 권한 = 최소 구조적 자유 · 직접 명령 금지'},
+    ],
+    svgPath:`<polygon points="110,20 150,45 172,85 165,130 138,162 110,175 82,162 55,130 48,85 70,45" fill="none" stroke="#8E24AA" stroke-width="2" opacity="0.85"/>
+    <polygon points="110,48 138,63 148,92 137,120 110,132 83,120 72,92 82,63" fill="none" stroke="#8E24AA" stroke-width="1.5" opacity="0.5"/>
+    <polygon points="110,75 126,83 131,100 122,115 110,120 98,115 89,100 94,83" fill="none" stroke="#8E24AA" stroke-width="1" opacity="0.3"/>
+    <circle cx="110" cy="20" r="3" fill="#8E24AA"/>
+    <circle cx="110" cy="175" r="3" fill="#8E24AA"/>
+    <text x="110" y="102" text-anchor="middle" fill="#8E24AA" font-family="Orbitron" font-size="10" opacity="0.5">I₂₀</text>`
+  }
+];
+
+let current = 0;
+
+function selectPoly(i) {
+  current = i;
+  const p = polys[i];
+  const isAuto = p.zone === 'auto';
+  const zoneColor = isAuto ? '#f87171' : '#4ade80';
+  const zoneBg = isAuto ? 'rgba(248,113,113,.08)' : 'rgba(74,222,128,.08)';
+  const zoneBorder = isAuto ? 'rgba(248,113,113,.3)' : 'rgba(74,222,128,.3)';
+
+  // Update tabs
+  document.querySelectorAll('.poly-tab').forEach((t,idx) => {
+    t.classList.toggle('active', idx === i);
+    if(idx===i) t.querySelector('.poly-tab-name').style.color = p.color;
+    else t.querySelector('.poly-tab-name').style.color = '';
+  });
+
+  // Face roles HTML
+  const faceRolesHTML = p.faceRoles.map(fr => `
+    <div class="fr-chip" style="color:${fr.color};border-color:${fr.color};background:${fr.color}18">
+      ${fr.label}
+    </div>
+  `).join('');
+
+  // E2E badge
+  const e2eBadgeHTML = isAuto
+    ? `<div class="e2e-badge auto-e2e">
+        <div class="e2e-num" style="color:${zoneColor}">${p.switchSurfaces.toLocaleString()}</div>
+        <div class="e2e-label">SWITCHING SURFACES (×8 LAYERS)</div>
+        <div class="e2e-restrict">⊘ 병렬 E2E 불가 — 단일 E2E 전용 (자율 구간)</div>
+       </div>`
+    : `<div class="e2e-badge intel-e2e" style="--tc:${p.color}">
+        <div class="e2e-num" style="color:${p.color}">${p.switchSurfaces.toLocaleString()}</div>
+        <div class="e2e-label">MAX PARALLEL E2E PATHS (×8 LAYERS)</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:${zoneColor};margin-top:6px;letter-spacing:1px">✓ 병렬 E2E 완전 지원 — 지능 구간</div>
+       </div>`;
+
+  document.getElementById('polyPanel').innerHTML = `
+    <div class="poly-visual" style="--glow:${p.glow}">
+      <div class="zone-badge-inline ${p.zone}">${p.zoneLabel}</div>
+      <div class="poly-svg-wrap">
+        <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pg" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="${p.color}" stop-opacity="0.08"/>
+              <stop offset="100%" stop-color="${p.color}" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="110" cy="110" r="100" fill="url(#pg)"/>
+          ${p.svgPath}
+        </svg>
+      </div>
+      <div>
+        <div class="poly-name-big" style="color:${p.color}">${p.formula}</div>
+        <div class="poly-formula">${p.name} · ${p.nodeNum}</div>
+      </div>
+      <div class="color-chip" style="background:${p.color}"></div>
+      <div class="poly-stats">
+        <div class="poly-stat"><div class="ps-val" style="color:${p.color}">${p.faces}</div><div class="ps-key">FACES</div></div>
+        <div class="poly-stat"><div class="ps-val" style="color:${p.color}">${p.edges}</div><div class="ps-key">EDGES</div></div>
+        <div class="poly-stat"><div class="ps-val" style="color:${p.color}">${p.vertices}</div><div class="ps-key">VERTICES</div></div>
+        <div class="poly-stat"><div class="ps-val" style="color:${p.color}">${p.facePairs}</div><div class="ps-key">FACE PAIRS</div></div>
+      </div>
+      ${e2eBadgeHTML}
+    </div>
+
+    <div class="poly-info">
+      <div class="pi-section" style="border-top-color:${p.color}">
+        <div class="pi-label">STRUCTURAL ROLE</div>
+        <div class="pi-title" style="color:${p.color}">${p.role}</div>
+        <div class="pi-text">${p.desc}</div>
+        <div class="face-roles">${faceRolesHTML}</div>
+        <span class="pi-tag ${isAuto?'warn':'good'}">${p.aiLayer}</span>
+        <span class="pi-tag" style="background:${p.colorb};color:${p.color};border-color:${p.color}">${p.colorName}</span>
+      </div>
+      <div class="pi-section" style="border-top-color:${p.color}">
+        <div class="pi-label">STRUCTURAL DETAILS</div>
+        ${p.details.map(d=>`
+          <div class="pi-row">
+            <div class="pi-row-key" style="color:${p.color}">${d.k}</div>
+            <div>${d.v}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+selectPoly(0);
+</script>
+</body>
+</html>
