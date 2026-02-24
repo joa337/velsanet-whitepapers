@@ -308,3 +308,15 @@ def get_cube(seu_id: str):
 @app.get("/events")
 def events(limit: int = 50):
     return {"events": EVENT_BUS[-limit:]}
+
+@app.get("/")
+def root():
+    return {
+        "service": "PAI 8-Channel -> Meta Cube System (MVP)",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
