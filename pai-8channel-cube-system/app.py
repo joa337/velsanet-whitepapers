@@ -19,8 +19,14 @@ app.add_middleware(
 )
 
 CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
-# CH1=시각  CH2=청각  CH3=언어  CH4=감정
-# CH5=신체  CH6=사회  CH7=의도  CH8=메타맥락
+# CH1 — Video Frames        (RGB/Depth/Semantic 영상)
+# CH2 — Audio Stream        (음성 + 주변 소음 + 환경음)
+# CH3 — Spatial-Temporal    (위치·궤적·타임스탬프)
+# CH4 — Biometric Signals   (심박·제스처·micro-expression)
+# CH5 — Text / NLP Input    (텍스트 입력·언어 의도)
+# CH6 — Device Interaction  (앱사용·터치·클릭 등 기기 상호작용)
+# CH7 — User Mode / Context (현재 사용자 모드·세션 컨텍스트)
+# CH8 — Environmental Meta  (온도·조도·소음레벨·공간정보 등 환경 메타)
 
 RAW_STORE:     Dict[str, Dict[str, Any]] = {}
 RAW_BY_SEU:    Dict[str, Dict[str, str]] = {}
@@ -75,67 +81,130 @@ def score_kw(text: str, pos: List[str], neg: List[str], default: float = 0.5) ->
     return round(min((p / (p + n)) * 0.6 + 0.4, 1.0), 3)
 
 def extract_signal(ch: str, raw_ref: str) -> Dict[str, Any]:
+    """
+    백서 #06 기준 채널 정의:
+    CH1: Video Frames  CH2: Audio Stream  CH3: Spatial-Temporal
+    CH4: Biometric     CH5: Text Input    CH6: Device Interactions
+    CH7: Metadata      CH8: Environmental Attributes
+    """
+    import re as _re
     t = raw_ref.strip()
     tl = t.lower()
 
-    if ch == "CH1":  # 시각
-        act = min(len(t) / 25.0, 1.0) * 0.5 + 0.3
-        stype = "scene_rich" if len(t) > 10 else "minimal"
+    if ch == "CH1":  # Video Frames - 시각 장면 복잡도
+        scene_kw = ["rgb","depth","조명","lighting","화면","screen","창","window","밝","bright","어두","dark","카페","cafe","사무실"]
+        richness = sum(1 for k in scene_kw if k in tl)
+        act = min(0.3 + richness * 0.08 + len(t)/100.0 * 0.3, 1.0)
+        stype = "scene_complex" if richness > 3 else ("scene_moderate" if richness > 1 else "scene_sparse")
 
-    elif ch == "CH2":  # 청각
-        if any(k in tl for k in ["음악","music","melody"]):
-            act, stype = 0.70, "music"
-        elif any(k in tl for k in ["목소리","voice","사람","people","대화","talk"]):
-            act, stype = 0.80, "speech"
-        elif any(k in tl for k in ["소음","noise","방송","announcement"]):
-            act, stype = 0.50, "noise"
-        elif any(k in tl for k in ["조용","quiet","silent"]):
-            act, stype = 0.10, "silent"
+    elif ch == "CH2":  # Audio Stream - 음향 분류
+        if any(k in tl for k in ["음악","music","jazz","bgm","melody","재즈"]):
+            act, stype = 0.65, "music"
+        elif any(k in tl for k in ["목소리","voice","발표","speaker","대화","conversation","다수","multiple"]):
+            act, stype = 0.85, "speech_active"
+        elif any(k in tl for k in ["방송","announcement","안내"]):
+            act, stype = 0.55, "broadcast"
+        elif any(k in tl for k in ["조용","quiet","silent","silence","없음","none"]):
+            act, stype = 0.05, "silent"
         else:
-            act, stype = 0.40, "ambient"
+            db_m = _re.search(r"(\d+)\s*db", tl)
+            if db_m:
+                db = int(db_m.group(1))
+                act = min(db / 100.0, 1.0)
+                stype = "noise_high" if db > 65 else ("noise_moderate" if db > 45 else "noise_low")
+            else:
+                act, stype = 0.40, "ambient"
 
-    elif ch == "CH3":  # 언어
-        act = score_kw(t, HIGH_INTENT_KW, [], 0.5)
-        stype = "inner_speech"
-
-    elif ch == "CH4":  # 감정
-        act = score_kw(t, POSITIVE_KW, NEGATIVE_KW, 0.5)
-        stype = "positive" if act > 0.6 else ("negative" if act < 0.4 else "neutral")
-
-    elif ch == "CH5":  # 신체
-        relax = any(k in tl for k in RELAX_KW)
-        tense = any(k in tl for k in TENSE_KW)
-        if relax and not tense:   act, stype = 0.80, "relaxed"
-        elif tense and not relax: act, stype = 0.60, "alert"
-        else:                     act, stype = 0.50, "neutral"
-
-    elif ch == "CH6":  # 사회
-        social = any(k in tl for k in SOCIAL_KW)
-        act   = 0.75 if social else 0.20
-        stype = "social_active" if social else "solitary"
-
-    elif ch == "CH7":  # 의도
-        act   = score_kw(t, HIGH_INTENT_KW, [], 0.5)
-        level = "high" if act > 0.65 else ("medium" if act > 0.4 else "low")
-        stype = f"intent_{level}"
-
-    elif ch == "CH8":  # 메타맥락
-        if any(k in tl for k in ["집중","focus","모드","mode"]):
-            act, stype = 0.85, "meta_focus"
-        elif any(k in tl for k in ["회복","recover","휴식","rest"]):
-            act, stype = 0.75, "meta_recovery"
-        elif any(k in tl for k in ["학습","learn","study","이해"]):
-            act, stype = 0.80, "meta_learning"
+    elif ch == "CH3":  # Spatial-Temporal - 이동성
+        moving_kw = ["이동","moving","subway","지하철","walking","걷","bus","버스","train","이동 중"]
+        static_kw = ["카페","cafe","사무실","office","자택","home","거실","회의실","meeting room"]
+        if any(k in tl for k in moving_kw):
+            act, stype = 0.80, "mobile"
+        elif any(k in tl for k in static_kw):
+            act, stype = 0.30, "static_indoor"
         else:
-            act   = min(len(t) / 20.0, 1.0) * 0.4 + 0.3
-            stype = "meta_general"
+            gps = _re.search(r"\d+\.\d+\s*,\s*\d+\.\d+", tl)
+            act = 0.60 if gps else 0.40
+            stype = "gps_fixed" if gps else "spatial_general"
+
+    elif ch == "CH4":  # Biometric - 생리적 각성
+        hr_m = _re.search(r"(\d+)\s*bpm", tl)
+        if hr_m:
+            hr = int(hr_m.group(1))
+            if hr < 65:   act, stype = 0.20, "bio_resting"
+            elif hr < 75: act, stype = 0.45, "bio_calm"
+            elif hr < 85: act, stype = 0.70, "bio_focused"
+            else:         act, stype = 0.90, "bio_aroused"
+        else:
+            relax_kw = ["이완","relax","편안","comfortable","무거","heavy"]
+            tense_kw = ["긴장","tense","활발","active","alert","응시"]
+            if any(k in tl for k in relax_kw):   act, stype = 0.20, "bio_relaxed"
+            elif any(k in tl for k in tense_kw): act, stype = 0.75, "bio_alert"
+            else:                                 act, stype = 0.50, "bio_neutral"
+
+    elif ch == "CH5":  # Text Input - 언어 의미 신호
+        if not t or "(none)" in tl or "(없음)" in tl or "(입력 없음)" in tl:
+            act, stype = 0.0, "text_absent"
+        else:
+            act = score_kw(t, HIGH_INTENT_KW, [], 0.5)
+            stype = "text_task" if act > 0.6 else ("text_note" if len(t) > 10 else "text_brief")
+
+    elif ch == "CH6":  # Device Interactions - 상호작용 강도
+        min_m = _re.search(r"(\d+)\s*(분|min)", tl)
+        sec_m = _re.search(r"(\d+)\s*(초|sec\b)", tl)
+        if any(k in tl for k in ["없음","none","터치 없","no touch","idle"]):
+            act, stype = 0.05, "device_idle"
+        elif min_m:
+            mins = int(min_m.group(1))
+            act = min(0.3 + mins/20.0, 1.0)
+            stype = "device_sustained"
+        elif sec_m:
+            secs = int(sec_m.group(1))
+            act = min(0.2 + secs/60.0, 0.8)
+            stype = "device_brief"
+        else:
+            act = min(len(t) / 40.0, 1.0) * 0.5 + 0.2
+            stype = "device_active"
+
+    elif ch == "CH7":  # User Mode / Context — 현재 사용자 상태·모드 (가장 직접적 신호)
+        if any(k in tl for k in ["회복","recovery","휴식","rest","이완 모드","recovery mode","쉬는","쉬고","쉼"]):
+            act, stype = 0.92, "mode_recovery"
+        elif any(k in tl for k in ["학습","study","learn","공부","이해","지식","읽으며","정리 중"]):
+            act, stype = 0.88, "mode_learning"
+        elif any(k in tl for k in ["집중","focus","deep","깊은","몰입","완전 집중"]):
+            act, stype = 0.88, "mode_focus"
+        elif any(k in tl for k in ["회의","meeting","발표","presentation","토론","discussion","논의"]):
+            act, stype = 0.85, "mode_social"
+        elif any(k in tl for k in ["완수","달성","목표","goal","실행","execute","완료","complete","업무 완수","핵심"]):
+            act, stype = 0.85, "mode_task"
+        elif any(k in tl for k in ["출근","commute","이동","transit","준비","prepare","가는","향하는"]):
+            act, stype = 0.72, "mode_transit"
+        else:
+            act = score_kw(t, HIGH_INTENT_KW + POSITIVE_KW, NEGATIVE_KW, 0.5)
+            stype = "mode_general"
+
+    elif ch == "CH8":  # Environmental Attributes - 환경 적합성
+        lux_m  = _re.search(r"(\d+)\s*lux", tl)
+        db_m   = _re.search(r"(\d+)\s*db", tl)
+        temp_m = _re.search(r"(\d+)\s*[°c℃]", tl)
+        score = 0.5
+        if lux_m:
+            lux = int(lux_m.group(1))
+            score += 0.15 if 200 <= lux <= 600 else -0.10
+        if db_m:
+            db = int(db_m.group(1))
+            score += 0.20 if db < 45 else (0.0 if db < 65 else -0.15)
+        if temp_m:
+            temp = int(temp_m.group(1))
+            score += 0.10 if 18 <= temp <= 24 else -0.05
+        act = round(max(0.1, min(score, 1.0)), 3)
+        stype = "env_optimal" if act > 0.7 else ("env_moderate" if act > 0.4 else "env_suboptimal")
     else:
         act, stype = 0.50, "unknown"
 
     return {"activation": round(act, 3), "signal_type": stype, "raw": t}
 
 
-# ── 2단계: 채널 피처·메타 ─────────────────────
 def build_features_from_raw(raw: Dict[str, Any]) -> Dict[str, Any]:
     signal = extract_signal(raw["channel_id"], raw.get("raw_ref", ""))
     return {
@@ -254,15 +323,43 @@ def synthesize_m(t, c, i, e, metas, raws) -> Dict:
     valence = e.get("valence",   0.5)
     m8      = sig["CH8"]
     audio   = sig["CH2"]
+    # 환경 조용함 여부 (CH8 환경 + CH2 음성)
+    db_quiet = act["CH8"] > 0.5 or "silent" in audio or "music" in audio
 
+    # CH7 = User Mode (가장 직접적인 사용자 모드 신호)
+    ch7 = sig["CH7"]
+    is_recovery = "recovery" in ch7
+    is_learning  = "learning" in ch7
+    is_focus     = "focus"    in ch7
+    is_social    = "social"   in ch7
+    is_task      = "task"     in ch7
+    is_transit   = "transit"  in ch7
+    ch7_known    = any([is_recovery, is_learning, is_focus, is_social, is_task, is_transit])
+
+    # 백서 #06 기준: CH7(사용자모드)=1차 결정자, 나머지 7채널=보조 신호
+    # CH7이 명확할수록 해당 모드에 압도적 가중치
     scores: Dict[str, float] = {
-        "deep_focus":     intent*0.4 + (1-act["CH6"])*0.2 + (0.8 if "focus"    in m8    else 0.2)*0.3 + (0.7 if "silent" in audio or "ambient" in audio else 0.3)*0.1,
-        "active_social":  act["CH6"]*0.4 + (0.9 if "speech"   in audio else 0.2)*0.3 + valence*0.3,
-        "learning":       (0.9 if "learning"  in m8 else 0.2)*0.4 + act["CH3"]*0.3 + act["CH1"]*0.2 + (1-act["CH6"])*0.1,
-        "rest_recovery":  (0.9 if "recovery"  in m8 else 0.1)*0.4 + (0.8 if "relax" in sig["CH5"] else 0.2)*0.3 + (1-intent)*0.2 + (0.8 if "music" in audio else 0.2)*0.1,
-        "task_execution": intent*0.5 + act["CH7"]*0.3 + act["CH3"]*0.2,
-        "alert_standby":  (1-valence)*0.4 + (0.8 if "alert" in sig["CH5"] else 0.1)*0.4 + (1-intent)*0.2,
-        "ambient":        max(0.0, 0.6 - sum(act.values())/len(act)) * 1.5,
+        # 깊은 집중: CH7=focus(1차) + CH4생체각성 + CH6기기지속 + CH5텍스트 + CH3정적
+        "deep_focus":     (0.92 if is_focus else 0.0 if is_recovery else 0.08) * 0.55
+            + act["CH4"]*0.15 + act["CH6"]*0.15 + act["CH5"]*0.10 + (1-act["CH3"])*0.05,
+        # 사회 활성: CH7=social(1차) + CH2음성 + CH6기기
+        "active_social":  (0.92 if is_social else 0.0 if is_recovery else 0.08) * 0.55
+            + (0.85 if "speech" in audio else 0.1)*0.25 + act["CH6"]*0.20,
+        # 학습: CH7=learning(1차) + CH5텍스트 + CH1영상 + CH3정적
+        "learning":       (0.92 if is_learning else 0.0 if is_recovery else 0.08) * 0.55
+            + act["CH5"]*0.20 + act["CH1"]*0.15 + (1-act["CH3"])*0.10,
+        # 휴식·회복: CH7=recovery(1차) + CH4이완 + CH2음악/무음 + CH6비활성
+        "rest_recovery":  (0.92 if is_recovery else 0.0 if ch7_known else 0.08) * 0.55
+            + (1-act["CH4"])*0.20 + (0.85 if "music" in audio or "silent" in audio else 0.1)*0.15 + (1-act["CH6"])*0.10,
+        # 과제 실행: CH7=task(1차) + CH5텍스트 + CH6기기
+        "task_execution": (0.92 if is_task else 0.0 if is_recovery else 0.08) * 0.55
+            + act["CH5"]*0.25 + act["CH6"]*0.20,
+        # 경계 대기: CH4고각성 + CH8환경불량 + CH3이동 (CH7 미지정 시)
+        "alert_standby":  (0.0 if ch7_known else 1.0) * (
+            act["CH4"]*0.40 + (1-act["CH8"])*0.35 + (0.8 if "mobile" in sig["CH3"] else 0.1)*0.25),
+        # 배경: CH7 미지정 + 전체 활성 낮음
+        "ambient":        (0.0 if ch7_known else 1.0) *
+            max(0.0, 0.55 - sum(act.values())/len(act)) * 1.5,
     }
 
     best  = max(scores, key=lambda k: scores[k])
