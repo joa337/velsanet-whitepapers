@@ -2,12 +2,22 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Any
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import time
 import hashlib
 import uuid
 
 app = FastAPI(title="PAI 8-Channel -> Meta Cube System (MVP)")
+
+# ✅ CORS 허용 (github.io → onrender.com 호출 가능)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
 
@@ -55,7 +65,6 @@ def get_raw(seu_id: str, channel_id: str) -> Dict[str, Any]:
 
 
 def build_features_from_raw(raw: Dict[str, Any]) -> Dict[str, Any]:
-    # Raw-first. No compression by default.
     return {
         "feature_ref": f"feature://{raw['channel_id']}/{raw['seu_id']}",
         "raw_ref": raw["raw_ref"],
@@ -65,7 +74,6 @@ def build_features_from_raw(raw: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def build_channel_meta(channel_id: str, features: Dict[str, Any]) -> Dict[str, Any]:
-    # AI plug-in point #1: channel meta extraction
     return {
         "channel_id": channel_id,
         "confidence": 0.5,
@@ -86,7 +94,6 @@ def merge_evidence(metas: Dict[str, Dict[str, Any]], ch_list: List[str]) -> List
 
 
 def synthesize_cube(seu_id: str) -> Dict[str, Any]:
-    # AI plug-in point #2: cube fusion
     metas: Dict[str, Dict[str, Any]] = {}
     for ch in CHANNELS:
         k = key(seu_id, ch)
@@ -98,7 +105,6 @@ def synthesize_cube(seu_id: str) -> Dict[str, Any]:
     i_sources = ["CH2", "CH3", "CH7"]
     e_sources = ["CH2", "CH5"]
 
-    # time from CH4 as the canonical timeline channel
     t_raw = get_raw(seu_id, "CH4")
 
     cube = {
@@ -274,7 +280,6 @@ def build_cube(payload: Dict[str, Any]):
     if not all_channels_present(seu_id):
         raise HTTPException(status_code=400, detail="not all channel raws present")
 
-    # auto meta build if missing
     for ch in CHANNELS:
         k = key(seu_id, ch)
         if k not in META_STORE:
@@ -309,6 +314,7 @@ def get_cube(seu_id: str):
 def events(limit: int = 50):
     return {"events": EVENT_BUS[-limit:]}
 
+
 @app.get("/")
 def root():
     return {
@@ -317,6 +323,10 @@ def root():
         "health": "/health"
     }
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 @app.get("/health")
 def health():
     return {"status": "ok"}
