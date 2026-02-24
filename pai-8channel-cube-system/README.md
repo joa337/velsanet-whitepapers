@@ -45,3 +45,11 @@ CH8 External Signals
 ```bash
 pip install -r requirements.txt
 uvicorn app:app --reload
+
+## Test (Minimal)
+
+Run:
+
+```bash
+pip install -r requirements.txt
+uvicorn app:app --reload
