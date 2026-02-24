@@ -252,15 +252,20 @@ def syn_t(t_raw: Dict) -> Dict:
     }
 
 def syn_c(metas: Dict, raws: Dict) -> Dict:
-    srcs = ["CH1","CH6","CH8"]
+    srcs = ["CH1","CH3","CH7"]
     v1   = raws.get("CH1","")[:15]
-    m8   = metas["CH8"]["signal_type"]
+    ch7  = metas["CH7"]["signal_type"]  # 사용자 모드 = 가장 명확한 맥락 신호
+    ch3  = metas["CH3"]["signal_type"]  # 공간 위치
     ctx  = []
     if v1:    ctx.append(v1)
-    if "social"    in metas["CH6"]["signal_type"]: ctx.append("social")
-    if "focus"     in m8: ctx.append("focus-context")
-    elif "recovery" in m8: ctx.append("rest-context")
-    elif "learning" in m8: ctx.append("learning-context")
+    if "transit"  in ch3: ctx.append("in-transit")
+    elif "indoor" in ch3: ctx.append(raws.get("CH3","")[:12])
+    if "recovery" in ch7: ctx.append("rest-context")
+    elif "learning" in ch7: ctx.append("learning-context")
+    elif "focus"   in ch7: ctx.append("focus-context")
+    elif "social"  in ch7: ctx.append("social-context")
+    elif "task"    in ch7: ctx.append("task-context")
+    elif "transit" in ch7: ctx.append("transit-context")
     return {
         "value":           " | ".join(ctx) if ctx else "ambient-context",
         "confidence":      round(sum(metas[c]["confidence"] for c in srcs)/3, 3),
@@ -269,30 +274,43 @@ def syn_c(metas: Dict, raws: Dict) -> Dict:
     }
 
 def syn_i(metas: Dict, raws: Dict) -> Dict:
-    srcs    = ["CH3","CH7","CH2"]
-    ia      = metas["CH7"]["activation"]
-    la      = metas["CH3"]["activation"]
-    combined = round(ia*0.6 + la*0.4, 3)
+    # I축 = 의도 강도: CH5(텍스트/NLP) + CH6(기기상호작용) + CH7(사용자모드 확인)
+    srcs    = ["CH5","CH6","CH7"]
+    # CH7 mode_task/mode_focus → 의도 높음 / mode_recovery → 의도 낮음
+    ch7_sig = metas["CH7"]["signal_type"]
+    ch7_intent = 0.85 if any(k in ch7_sig for k in ["task","focus","transit"]) else (
+                 0.30 if "recovery" in ch7_sig else
+                 0.65 if any(k in ch7_sig for k in ["learning","social"]) else 0.50)
+    text_act = metas["CH5"]["activation"]
+    device_act = metas["CH6"]["activation"]
+    combined = round(ch7_intent*0.5 + text_act*0.3 + device_act*0.2, 3)
     level   = "high-intent" if combined > 0.7 else ("moderate-intent" if combined > 0.5 else "low-intent")
-    raw7    = raws.get("CH7","")[:20]
+    raw5    = raws.get("CH5","")[:24]
     return {
-        "value":           f"{level}: {raw7}" if raw7 else level,
+        "value":           f"{level}: {raw5}" if raw5 else level,
         "intensity":       combined,
-        "confidence":      round(sum(metas[c]["confidence"] for c in srcs)/3, 3),
+        "confidence":      round(sum(metas[ch]["confidence"] for ch in srcs)/3, 3),
         "source_channels": srcs,
         "evidence_refs":   merge_evidence(metas, srcs),
     }
 
 def syn_e(metas: Dict, raws: Dict) -> Dict:
-    srcs    = ["CH4","CH5"]
+    # E축 = 감정/생체: CH4(바이오메트릭) 기반, CH7 모드로 보완
+    srcs    = ["CH4","CH7"]
+    bio     = metas["CH4"]["signal_type"]   # bio_relaxed / bio_alert / bio_focused / bio_fatigued
+    ch7     = metas["CH7"]["signal_type"]
     valence = metas["CH4"]["activation"]
-    body    = metas["CH5"]["signal_type"]
-    if   valence > 0.7 and "relax" in body: label = "calm-positive"
-    elif valence > 0.7:                      label = "energized-positive"
-    elif valence > 0.5:                      label = "mild-positive"
-    elif valence > 0.4:                      label = "neutral"
-    elif "alert" in body:                    label = "tense-alert"
-    else:                                    label = "mild-negative"
+    # recovery 모드면 자동으로 calm, task/focus면 focused
+    if "recovery" in ch7:
+        label = "calm-relaxed"
+        valence = min(valence + 0.1, 1.0)
+    elif "relax" in bio:                     label = "calm-positive"
+    elif "focused" in bio:                   label = "focused-alert"
+    elif "elevated" in bio or "aroused" in bio: label = "energized-positive"
+    elif "fatigued" in bio:                  label = "mild-fatigued"
+    elif valence > 0.5:                       label = "mild-positive"
+    elif valence > 0.4:                       label = "neutral"
+    else:                                     label = "mild-negative"
     raw4 = raws.get("CH4","")[:20]
     return {
         "value":           f"{label}: {raw4}" if raw4 else label,
