@@ -86,6 +86,170 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:36
 .footer-link{font-size:10px;letter-spacing:2px;color:var(--muted);text-decoration:none;transition:color .2s;}
 .footer-link:hover{color:#00E5FF;}
 .footer-copy{font-size:10px;color:var(--dim);letter-spacing:1px;}
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Velsanet — Architecture Hub v2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#020406;--surface:#070B10;--border:#0E1A24;--c01:#00E5FF;--c05:#00FF87;--c12:#FF4444;--c20:#7C3AED;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:#C8DCE8;font-family:'Syne',sans-serif;overflow:hidden;height:100vh;}
+#app{display:flex;height:100%;}
+#sidebar{width:300px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:20;box-shadow:10px 0 30px rgba(0,0,0,0.5);}
+#canvas-container{flex:1;position:relative;background:#000;cursor:grab;}
+canvas{display:block;}
+.wp-item{padding:12px;border-bottom:1px solid var(--border);font-size:11px;opacity:0.6;transition:0.3s;}
+.wp-item:hover{opacity:1;background:rgba(0,229,255,0.05);cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div style="padding:24px;border-bottom:1px solid var(--border)">
+      <h1 style="font-size:16px;letter-spacing:3px;font-weight:900;color:#fff">VELSANET</h1>
+      <p style="font-family:'Space Mono';font-size:8px;color:var(--c01);margin-top:4px;letter-spacing:1px">SPATIAL NETWORK ARCHITECTURE</p>
+    </div>
+    <div style="padding:15px; font-size:10px; color:var(--c01); border-bottom:1px solid var(--border)">
+        ACTIVE LAYERS: H20 - T4
+    </div>
+    <div id="wp-list" style="overflow-y:auto;flex:1;">
+      <div class="wp-item">WP#01: Spatial Node Classification</div>
+      <div class="wp-item">WP#13: Rhizome Topology</div>
+      <div class="wp-item" style="color:var(--c01);opacity:1">WP#21: Intelligent Contract Validation</div>
+    </div>
+  </div>
+  <div id="canvas-container">
+    <canvas id="stage"></canvas>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+let W, H, CX, CY;
+let nodes = [], edges = [], h6Tk = {};
+let tick = 0;
+let pitch = 0.18; // 수평 시각 최적화
+let yaw = 0;
+let zoom = 0.95;
+
+const CC = { t4:[0,229,255], h6:[255,214,0], h8:[255,23,68], h12:[21,101,255], h20:[124,58,237] };
+
+const META = {
+  'H20': { z: 220,  r: 8,  c: CC.h20, label: 'H20 AsAI', sub: 'National Backbone' },
+  'H12': { z: 120,  r: 5,  c: CC.h12, label: 'H12 AAI',  sub: 'Regional Consensus' },
+  'H8':  { z: 20,   r: 4,  c: CC.h8,  label: 'H8 PAI',   sub: 'Personal Micro-grid' },
+  'H6':  { z: -80,  r: 3,  c: CC.h6,  label: 'H6 Gateway', sub: 'Intelligent Auth' },
+  'T4':  { z: -180, r: 2.5, c: CC.t4, label: 'T4 Rhizome', sub: 'User Terminal' }
+};
+
+function initNodes() {
+  nodes = []; h6Tk = {};
+  Object.keys(META).forEach(type => {
+    const m = META[type];
+    const count = type==='H20'?1: type==='H12'?4: type==='H8'?12: type==='H6'?32: 64;
+    for(let i=0; i<count; i++){
+      const r = (350 - Math.abs(m.z)*0.4) + Math.random()*50;
+      const ang = (i/count) * Math.PI * 2;
+      nodes.push({
+        id:`${type}-${i}`, type, x:Math.cos(ang)*r, y:Math.sin(ang)*r, z:m.z,
+        r:m.r, color:m.c, label:m.label, intelligent:['H20','H12','H8'].includes(type)
+      });
+    }
+  });
+
+  // T4 Rhizome Chain 및 H6 점유 로직
+  const t4s = nodes.filter(n=>n.type==='T4');
+  const h6s = nodes.filter(n=>n.type==='H6');
+  for(let i=0; i<t4s.length; i++){
+    const curr = t4s[i], next = t4s[(i+1)%t4s.length];
+    edges.push({a:curr.id, b:next.id, color:CC.t4, opacity:0.3});
+    
+    // 특정 확률로 H6와 연결 (구조적 점유)
+    if(i % 8 === 0) {
+      const h6 = h6s[Math.floor(i/8) % h6s.length];
+      h6Tk[h6.id] = true;
+      edges.push({a:curr.id, b:h6.id, color:CC.t4, opacity:0.6, dash:[2,2]});
+    }
+  }
+}
+
+function project(n) {
+  const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+  const cosP = Math.cos(pitch), sinP = Math.sin(pitch);
+  let x = n.x*cosY - n.y*sinY;
+  let y = n.x*sinY + n.y*cosY;
+  let z = n.z;
+  const y1 = y*cosP - z*sinP;
+  const z1 = y*sinP + z*cosP;
+  const d = 600 / (z1 + 600);
+  return { sx: CX+x*d*zoom, sy: CY+y1*d*zoom, d: d*zoom };
+}
+
+function render() {
+  tick++; yaw += 0.002;
+  ctx.fillStyle = '#000'; ctx.fillRect(0,0,W,H);
+  
+  const sorted = nodes.map(n=>({ ...n, p: project(n) })).sort((a,b)=>a.p.d - b.p.d);
+
+  // 간선 그리기
+  edges.forEach(e => {
+    const n1 = sorted.find(n=>n.id===e.a), n2 = sorted.find(n=>n.id===e.b);
+    if(n1 && n2) {
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(${e.color[0]},${e.color[1]},${e.color[2]},${e.opacity * n1.p.d})`;
+      ctx.setLineDash(e.dash || []);
+      ctx.moveTo(n1.p.sx, n1.p.sy); ctx.lineTo(n2.p.sx, n2.p.sy);
+      ctx.stroke();
+    }
+  });
+
+  // 노드 그리기
+  sorted.forEach(n => {
+    const {sx, sy, d} = n.p;
+    const rad = n.r * d;
+    const [r,g,b] = n.color;
+
+    // 점유된 H6 강조
+    if(h6Tk[n.id]) {
+      ctx.beginPath(); ctx.strokeStyle = `rgba(${CC.t4[0]},${CC.t4[1]},${CC.t4[2]},0.5)`;
+      ctx.lineWidth = 2; ctx.setLineDash([2,4]);
+      ctx.arc(sx, sy, rad*4, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // 노드 본체 및 글로우
+    const gdt = ctx.createRadialGradient(sx, sy, 0, sx, sy, rad*3);
+    gdt.addColorStop(0, `rgba(${r},${g},${b},0.3)`); gdt.addColorStop(1, `transparent`);
+    ctx.fillStyle = gdt; ctx.beginPath(); ctx.arc(sx, sy, rad*3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.beginPath(); ctx.arc(sx, sy, rad, 0, Math.PI*2); ctx.fill();
+
+    // 지능형 노드 링
+    if(n.intelligent) {
+      ctx.beginPath(); ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+      ctx.arc(sx, sy, rad*2.5, 0, Math.PI*2); ctx.stroke();
+    }
+  });
+
+  requestAnimationFrame(render);
+}
+
+window.addEventListener('resize', () => {
+  W = canvas.width = document.getElementById('canvas-container').clientWidth;
+  H = canvas.height = document.getElementById('canvas-container').clientHeight;
+  CX = W/2; CY = H/2;
+});
+
+window.dispatchEvent(new Event('resize'));
+initNodes();
+render();
+</script>
+</body>
+</html>
 /* CONTACT SECTION */
 .contact-block{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;}
 .contact-eyebrow{font-size:9px;letter-spacing:5px;color:var(--muted);font-weight:700;margin-bottom:14px;}
