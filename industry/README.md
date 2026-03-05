@@ -17,6 +17,24 @@ Technical mapping of Velsanet architecture onto NVIDIA's AI compute platform and
 
 Velsanet Hardware Implementation on NVIDIA + TSMC Platform
 
+Intel + Broadcom Platform Mapping
+
+Technical mapping of Velsanet architecture onto Intel compute and silicon photonics technologies together with Broadcom network infrastructure and custom AI ASIC platforms.
+
+This report examines the role of:
+
+Intel Silicon Photonics and Intel Foundry processes for MOCT fabrication
+
+Intel IPU (Infrastructure Processing Unit) as the closest architectural analogue to Velsanet Dedicated Equipment
+
+Intel Core Ultra NPU and Xeon + Gaudi platforms for PAI and AAI node implementation
+
+Broadcom custom AI ASIC platforms (XPU) for AsAI infrastructure-scale compute
+
+Broadcom networking silicon and its structural limitations relative to Velsanet's packet-free E2E architecture
+
+Velsanet Hardware Implementation on Intel + Broadcom Platform
+
 Purpose
 
 These documents aim to:
@@ -28,4 +46,5 @@ These documents aim to:
 Notes
 
 These reports are independent technical analyses created by the Velsanet Architecture Group.
+
 They are intended to support discussion and exploration of architecture-level ideas within the semiconductor, AI infrastructure, and networking communities.
