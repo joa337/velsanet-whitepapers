@@ -48,3 +48,11 @@ Notes
 These reports are independent technical analyses created by the Velsanet Architecture Group.
 
 They are intended to support discussion and exploration of architecture-level ideas within the semiconductor, AI infrastructure, and networking communities.
+
+This directory contains a series of independent industry platform mappings exploring how the Velsanet architecture may relate to existing semiconductor ecosystems.
+
+Each report examines a different technological pathway:
+
+• ARM + Samsung — distributed compute and edge infrastructure
+• NVIDIA + TSMC — AI supercomputing and GPU fabric platforms
+• Intel + Broadcom — data center networking and silicon photonics infrastructure
