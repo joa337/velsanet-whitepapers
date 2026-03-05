@@ -1,17 +1,31 @@
-Industry Technical Reports
+Industry Platform Mapping
 
-This directory contains industry-oriented technical documents related to the Velsanet architecture.
+This directory contains independent technical analyses exploring how the Velsanet architecture can be mapped onto existing semiconductor and computing ecosystems.
 
-The materials here focus on how Velsanet concepts can map to existing semiconductor, hardware, and system platforms.
+The goal of these documents is to examine how Velsanet's structural concepts — polyhedral nodes, parallel E2E connectivity, and AI-layer hierarchy — relate to real industry platforms and hardware technologies.
 
-These documents are independent technical analyses intended to explore potential implementation paths and industry alignment.
+Rather than proposing new semiconductor designs, these reports explore how existing compute platforms, interconnect fabrics, and fabrication technologies may align with Velsanet's architectural model.
 
-Contents may include:
+Documents
+ARM + Samsung Platform Mapping
 
-Hardware platform mapping reports
+Analysis of Velsanet node implementation using ARM compute architectures and Samsung Foundry technologies, focusing on distributed edge compute and network-oriented AI infrastructure.
 
-Semiconductor and system architecture analysis
+NVIDIA + TSMC Platform Mapping
 
-Industry collaboration perspectives
+Technical mapping of Velsanet architecture onto NVIDIA's AI compute platform and TSMC fabrication technologies, including GPU clusters, NVLink/NVSwitch fabrics, BlueField DPU infrastructure, and silicon photonics integration.
 
-For the core architectural foundations of Velsanet, see the whitepapers directory in the main repository.
+Velsanet Hardware Implementation on NVIDIA + TSMC Platform
+
+Purpose
+
+These documents aim to:
+
+• Explore how Velsanet architecture may relate to existing semiconductor ecosystems
+• Identify potential hardware paths for experimentation and prototyping
+• Provide industry-oriented technical interpretation of Velsanet concepts
+
+Notes
+
+These reports are independent technical analyses created by the Velsanet Architecture Group.
+They are intended to support discussion and exploration of architecture-level ideas within the semiconductor, AI infrastructure, and networking communities.
