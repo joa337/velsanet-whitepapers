@@ -1,5 +1,3 @@
-알겠습니다. 핵심만 남기고 아주 간결하게 정리한 영문 README입니다.
-
 Velsanet: Structure-Native Network
 Velsanet is a next-generation network architecture designed for 6G (IMT-2030). It replaces traditional packet switching with Structure Switching.
 
