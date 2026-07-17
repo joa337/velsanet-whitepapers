@@ -1,30 +1,23 @@
-# ITU-T FG-AINN & FG-EAI Submissions
+# ITU-T FG-AINN / FG-EAI Submissions
 
 This directory contains the official documents submitted to the ITU-T Focus Groups on **AI-Native Networks (FG-AINN)** and **Embodied AI (FG-EAI)**.  
-All files are read-only copies of the official submissions.
+All files are read‑only copies of the official submissions.
 
 ---
 
 ## Documents
 
-### FG-AINN (AI-Native Networks)
-
-| File | Description | Status |
-|------|-------------|--------|
-| `hw_design.docx` | Velsanet Hardware Architecture (WP#29–34) — CPO, slot/core allocation, optical fabric, loopback design | ✅ Submitted |
-| `ai_design.docx` | Velsa Network AI v2.1 — Distributed control, self-healing, fairness policy, Schlegel projection | ✅ Submitted |
-
-### FG-EAI (Embodied AI)
-
-| File | Description | Documents | Status |
-|------|-------------|-----------|--------|
-| `eai_design.docx` | Velsanet EAI Architecture — Embodied AI governance, Dual E2E control/execution planes, CH11 isolation, physical actuation | WP#24–28 (+WP#29 연동) | ✅ Submitted |
+| File | Description | Focus Group | Status |
+|------|-------------|-------------|--------|
+| `FG-AINN-I-262-R1-att2.docx` | **Hardware Design** — Velsanet hardware architecture (WP#29–34): CPO, slot/core allocation, optical fabric, loopback design | FG‑AINN | ✅ Submitted |
+| `FG-AINN-I-262-R1-att3.docx` | **Network AI Design** — Velsa v2.1: distributed control, self‑healing, fairness policy, Schlegel projection | FG‑AINN | ✅ Submitted |
+| `FG-EAI-I-011-R1-att3.docx` | **EAI/PAI Hardware Design** — Embodied AI (EAI) and Cognitive AI (PAI) hardware architecture (WP#24–28): Dual E2E, CH11 isolation, Cognition Cube, SEU1/SEU2 | FG‑EAI | ✅ Submitted |
 
 ---
 
 ## Document Control
 
-- These are **read-only** copies of the official ITU-T submissions.
+- These are **read‑only** copies of the official ITU‑T submissions.
 - Do not modify files in this directory.
 - Working versions and ongoing revisions are maintained in `../specs/`.
 
@@ -32,18 +25,18 @@ All files are read-only copies of the official submissions.
 
 ## Submission History
 
-| Date | Document | Focus Group | Event |
-|------|----------|-------------|-------|
-| 2026-07-15 | `hw_design.docx` | FG-AINN | Submitted |
-| 2026-07-15 | `ai_design.docx` | FG-AINN | Submitted |
-| 2026-07-16 | `eai_design.docx` | FG-EAI (Embodied AI) | Submitted (pending formal review) |
+| Date | File | Focus Group | Event |
+|------|------|-------------|-------|
+| 2026-07-15 | `FG-AINN-I-262-R1-att2.docx` | FG‑AINN | Submitted |
+| 2026-07-15 | `FG-AINN-I-262-R1-att3.docx` | FG‑AINN | Submitted |
+| 2026-07-16 | `FG-EAI-I-011-R1-att3.docx` | FG‑EAI | Submitted (pending formal review) |
 
 ---
 
 ## Related
 
-- Active specifications: `../specs/` (includes `eai.md`)
-- Implementation: `../../src/eai/`
+- Active specifications: `../specs/`
+- Implementation: `../../src/`
 - Main README: `../../README.md`
 
 ---
@@ -51,4 +44,4 @@ All files are read-only copies of the official submissions.
 ## Contact
 
 Maintainer: Changho Song  
-FG-AINN / FG-EAI correspondence: via official ITU-T channels
+FG‑AINN / FG‑EAI correspondence: via official ITU‑T channels
